@@ -1,0 +1,7 @@
+test.js
+test.ts
+package-lock.json
+note.txt
+node_modules/
+.gitignore
+*.js

@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+service TransectionService {
+    rpc activityList(ActivityRequest) returns (ActivityReponse);
+    rpc transection (TransectionRequest) returns (TransectionResponse);
+    rpc transectionRecord (TransectionRecordRequest) returns (TransectionRecordResponse);
+}
+
+message ActivityRequest {}
+
+message ActivityReponse {
+    int32 errCode = 1;
+    repeated ActivityReponseData data = 2;
+}
+
+message ActivityReponseData {
+    int32 activityType = 1;
+    int32 startDate = 2;
+    int32 endDate = 3;
+    string activityInfo = 4;
+}
+
+message TransectionRequest {
+    string username = 1;
+    int32 userType = 2;
+    string activityID = 3;
+    int32 activityType = 4;
+    repeated BookInfo bookInfo = 5;
+}
+
+message BookInfo {
+    string bookId = 1;
+    int32 bookNumber = 2;
+    int32 price = 3;
+}
+
+message TransectionResponse {
+    int32 errCode = 1; 
+    repeated BookInfo bookInfo = 2;
+    ActivityReponseData appliedActivityData = 3;
+    int32 totalPrice = 4; 
+    int32 transectionTime = 5;
+}
+
+message TransectionRecordRequest {
+    string username = 1;
+    int32 accountType = 2;
+    int32 page = 3;
+    int32 pageSize = 4;
+}
+
+message TransectionRecord {
+    repeated BookInfo bookInfo = 1;
+    ActivityReponseData appliedActivityData = 2;
+    int32 totalPrice = 3; 
+    int32 transectionTime = 4;
+}
+
+message TransectionRecordResponse {
+    int32 errCode = 1; 
+    string username = 2;
+    int32 recordNumber = 3;
+    repeated TransectionRecord transectionRecords = 4;
+}

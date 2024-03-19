@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+service BookService {
+    rpc bookList (BookListRequest) returns (BookListResponse);
+}
+
+message BookListRequest {
+    int32 page = 1;
+    int32 pageSize = 2;
+    string bookName = 3;
+    repeated string tags = 4;
+    int32 priceUpperbound = 5;
+    int32 priceLowerbound = 6;
+}
+
+message Book {
+    string ID = 1;
+    string name = 2;
+    int32 price = 3;
+    int32 remainNumber = 4;
+    repeated string tags = 5;
+}
+
+message BookData {
+    int32 totalBookNumber = 1;
+    int32 page = 2;
+    int32 pageSize = 3;
+    repeated Book books = 4;
+}
+
+message BookListResponse {
+    int32 errcode = 1;
+    BookData bookdata = 2;
+}
+

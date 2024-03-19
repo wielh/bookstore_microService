@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+service AccountService {
+    rpc register (RegisterRequest) returns (RegisterResponse);
+    rpc login (LoginRequest) returns (LoginResponse);
+    rpc gooogleLogin (GooogleLoginRequest) returns (GooogleLoginResponse);
+    rpc resendRegisterVerifyEmail (ResendRegisterVerifyEmailRequest) returns (ResendRegisterVerifyEmailResponse);
+    rpc registerVerify (RegisterVerifyRequest) returns (RegisterVerifyResponse);
+    rpc resetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
+}
+
+message Base {
+    string username = 1;
+    string password = 2;
+}
+
+message RegisterRequest {
+    Base base = 1;
+    string email = 2;
+}
+
+message RegisterResponse {
+    int32 errcode = 1;
+}
+
+message ResendRegisterVerifyEmailRequest {
+    Base base = 1;
+    string email = 2;
+}
+
+message ResendRegisterVerifyEmailResponse {
+    int32 errcode = 1;
+}
+
+message LoginRequest {
+    Base base = 1;
+}
+
+message LoginResponse {
+    int32 errcode = 1;
+    string token = 2;
+}
+
+message GooogleLoginRequest {
+    string googleID = 1;
+    string googleName = 2;
+    string googleEmail = 3;
+}
+
+message GooogleLoginResponse {
+    int32 errcode = 1;
+    string token = 2;
+}
+
+message ResetPasswordRequest {
+    Base base = 1;
+    string newPassword = 2;
+}
+
+message ResetPasswordResponse {
+    int32 errcode = 1;
+}
+
+message RegisterVerifyRequest {
+    Base base = 1;
+}
+
+message RegisterVerifyResponse {
+    int32 errcode = 1;
+}
+
