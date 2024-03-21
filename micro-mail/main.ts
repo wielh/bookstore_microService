@@ -21,7 +21,7 @@ export const transporter = createTransport(
     }
 );
 
-// ref: https://blog.hungwin.com.tw/aspnet-google-login/
+
 export async function sendMailImplementation(emailAddress:string, subject:string, message:string): Promise<boolean>{
     try {
         await transporter.sendMail(

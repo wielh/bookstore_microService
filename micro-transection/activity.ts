@@ -1,9 +1,9 @@
 import {ActivityRequest,ActivityReponse, ActivityReponseData} from '../proto/transection.js'
 import * as grpc from "@grpc/grpc-js";
-import { mongoDB, mongoTable, logger} from '../common/config.js'
-import { generateMessage, getTimeStampSecond} from '../common/utils.js'
+import {  logger} from '../common/config.js'
+import { generateMessage} from '../common/utils.js'
 import { errMongo, errSuccess} from '../common/errCode.js'
-import * as activityDB from '../common/dbStructure/activity'
+import * as activityDB from '../common/dbStructure/activity.js'
 
 // 1. 打折
 // 2. 買5送1
@@ -12,20 +12,33 @@ export async function activityList(call: grpc.ServerUnaryCall<ActivityRequest,Ac
     let functionName:string = "activityList"
     let req = call.request
     let res = new ActivityReponse()
-    let now = getTimeStampSecond()
+    let now = new Date().getTime()
 
     try {
         let activitys = await activityDB.findActivities(now)
         for (let activity of activitys) {
             let activityRes = new ActivityReponseData()
-            activityRes.activityType = activity.activityBase.type
-            activityRes.startDate = activity.activityBase.startDate
-            activityRes.endDate = activity.activityBase.endDate
-            activityRes.activityInfo = JSON.stringify(activity.level)
+            activityRes.activityType = activity.type
+            activityRes.startDate = activity.startDate
+            activityRes.endDate = activity.endDate
+            switch(activity.type){
+                case 1:
+                    activityRes.activityInfo = JSON.stringify(activity.levelType1)
+                    break;
+                case 2:
+                    activityRes.activityInfo = JSON.stringify(activity.levelType2)
+                    break;
+                case 3:
+                    activityRes.activityInfo = JSON.stringify(activity.levelType3)
+                    break;
+                default:
+                    activityRes.activityInfo = ""
+            }
+            
             res.data.push(activityRes)
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching book", req))
+        logger.error(generateMessage("", functionName, "mongoErr happens while searching activity", req))
         res.errCode = errMongo
         callback(error,res)
     }

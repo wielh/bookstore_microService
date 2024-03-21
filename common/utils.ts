@@ -104,7 +104,7 @@ export class pageX {
     }
 
     public getSkip(currentPage:number):number{
-        if (currentPage <= 0) {
+        if (currentPage <= 0 || this.pageNumber<=0 ) {
             return 0
         } else if ( currentPage >= this.pageNumber) {
             return (this.pageNumber -1 )* this.pageSize

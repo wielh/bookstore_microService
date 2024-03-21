@@ -1,5 +1,6 @@
-import { Schema, Document, model, FilterQuery, Types } from 'mongoose';
+import { Schema, Document, model, FilterQuery, Types, ClientSession } from 'mongoose';
 import {pageX} from '../utils.js'
+import { objectId } from 'mongodb-typescript';
 
 class BookDocument extends Document{
     bookName: string
@@ -12,9 +13,12 @@ const bookSchema = new Schema({
     bookName: String,
     price: Number,
     remainNumber: Number
+},{
+    versionKey: false, 
+    strict: false
 });
 
-const bookModel = model<BookDocument>('book', bookSchema)
+export var bookModel = model<BookDocument>('book', bookSchema,'book')
 
 function generateFilters(bookName:string, tags:string[], priceLowerbound:number, priceUpperbound:number): FilterQuery<BookDocument> {
     let filter: FilterQuery<BookDocument> = {};
@@ -43,17 +47,22 @@ export async function count(bookName:string, tags:string[], priceLowerbound:numb
 }
 
 export async function getbookData(bookName:string, tags:string[], priceLowerbound:number, priceUpperbound:number, 
-    pageSize:number, page:number, bookCount:number): Promise<(Document<unknown, {}, BookDocument> & BookDocument & {_id: Types.ObjectId; })[]>{
-
+    pageSize:number, page:number, bookCount:number){
     let pageConfig = new pageX(pageSize, bookCount)
     let skipNumber = pageConfig.getSkip(page)
     let filter = generateFilters(bookName, tags, priceLowerbound, priceUpperbound) 
-    let result = (await bookModel.find(filter).skip(skipNumber).limit(pageSize).exec())
+    let result = await bookModel.find(filter).skip(skipNumber).limit(pageSize)
     return result
 }
 
 export async function getBookById(bookId:string): Promise<BookDocument>{
-    return await bookModel.findById(bookId)
+    return await bookModel.findOne({_id:new Types.ObjectId(bookId)})
+}
+
+export async function takeBooks(bookId:string, bookNumber:number, session:ClientSession):Promise<boolean> {
+    let r = await bookModel.findOneAndUpdate(
+        {_id:new Types.ObjectId(bookId) , remainNumber:{$gte:bookNumber}}, {$inc:{remainNumber:-1*bookNumber}}, { new:true, session: session})
+    return !(r == null)
 }
 
 

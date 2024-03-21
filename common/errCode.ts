@@ -11,5 +11,7 @@ export const errUserNotExist = 10002
 export const errSendRegisterEmailFailed = 10003
 
 export const errActivityConfig = 20001
-
+export const errGoldNotEnought = 20002
+export const errUpdateIncomeFailed = 20003
+export const errBookNotEnought = 20004
 

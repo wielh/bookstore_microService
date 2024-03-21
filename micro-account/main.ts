@@ -3,11 +3,10 @@ import {accountServiceIP} from '../common/config.js'
 import { UnimplementedAccountServiceService, GooogleLoginRequest, GooogleLoginResponse, LoginRequest, LoginResponse, 
     RegisterRequest, RegisterResponse, ResetPasswordRequest, ResetPasswordResponse, ResendRegisterVerifyEmailRequest,
     ResendRegisterVerifyEmailResponse,RegisterVerifyRequest,RegisterVerifyResponse} from "../proto/account.js";
-import { logger,tokenExpireSecond, basicUrl} from '../common/config.js'
+import { logger,tokenExpireSecond, basicUrl, mongooseConnection} from '../common/config.js'
 import {errSuccess, errMongo, errUserExist, errUserNotExist, errSendRegisterEmailFailed, errEmailVerifited} from '../common/errCode.js'
 import {generateMessage,createToken, sendMailProducer} from '../common/utils.js'
-import * as userDB from '../common/dbStructure/user'
-
+import * as userDB from '../common/dbStructure/user.js'
 
 async function resendRegiterVerifyEmailImplementation(username:string, email:string): Promise<number> {
     let verificationCode = createToken({username:username, email: email},60*60)
@@ -26,7 +25,7 @@ async function register(call: grpc.ServerUnaryCall<RegisterRequest, RegisterResp
     let req = call.request
     let res = new RegisterResponse()
     try {
-        let userExist = userDB.normalUserExist(req.base.username)
+        let userExist = await userDB.normalUserExist(req.base.username)
         if (userExist) {
             res.errcode = errUserExist
             callback(null, res)
@@ -168,6 +167,7 @@ async function resetPassword(call: grpc.ServerUnaryCall<ResetPasswordRequest, Re
     callback(null,res)
 }
 
+await mongooseConnection()
 const server = new grpc.Server();
 server.addService(UnimplementedAccountServiceService.definition, 
     {register, googleLogin, login, resetPassword, resendRegiterVerifyEmail, registerVerify})

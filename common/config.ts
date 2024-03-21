@@ -3,9 +3,9 @@ import {BookServiceClient} from '../proto/book.js'
 import {TransectionServiceClient} from '../proto/transection.js'
 import  {createLogger,transports,format} from 'winston'
 import {credentials} from '@grpc/grpc-js'
-import mongoose from 'mongoose';
 import {connect} from 'amqplib'
 import { google } from "googleapis";
+import mongoose from 'mongoose'
 
 export const logger = createLogger({
     level: 'info',
@@ -33,12 +33,14 @@ const transectionServicePort = 9503
 export const transectionServiceIP = `${IP}:${transectionServicePort}`
 export const transectionServiceClient = new TransectionServiceClient(bookServiceIP,credentials.createInsecure())
 
-const mongoPort = 27017
-const mongoIP =`mongodb://127.0.0.1:${mongoPort}`   
-const dbName = 'bookstore'
-mongoose.connect(`mongodb://${mongoIP}/${dbName}`)
+
+const mongoIP =`mongodb://127.0.0.1:27017/bookstore`   
+export async function mongooseConnection() {
+    mongoose.connect(mongoIP)
     .then(() => console.log('Connected to MongoDB'))
     .catch(error => console.error('Error connecting to MongoDB:', error));
+
+}
 
 const rabbitMQPort = 5672
 const rabbitMQUsername = 'root';
@@ -52,3 +54,4 @@ export const googleVerifyID = "118619557524-26i4t5boire053d9pg59csddkf302tds.app
 export const googleVerifyPassword = "***"
 export const googleCallbackUrl = basicUrl + "/account/google_callback"
 export const Oauth2Client = new google.auth.OAuth2(googleVerifyID,googleVerifyPassword,googleCallbackUrl)
+

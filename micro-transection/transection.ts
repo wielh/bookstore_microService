@@ -2,20 +2,52 @@
 import {ServerUnaryCall, sendUnaryData} from "@grpc/grpc-js";
 import mongoose from 'mongoose'
 
-import {TransectionRequest, TransectionResponse, BookInfo, TransectionRecordRequest, TransectionRecordResponse, TransectionRecord, ActivityReponseData} from '../proto/transection.js'
+import {TransectionRequest, TransectionResponse, TransectionRecordRequest, TransectionRecordResponse, TransectionRecord, ActivityReponseData, BookInfo} from '../proto/transection.js'
 import { logger} from '../common/config.js'
-import { errMongo, errSuccess, errUserNotExist} from '../common/errCode.js'
-import { generateMessage,checkParameterFormat, pageX} from '../common/utils.js'
+import { errMongo, errSuccess, errUserNotExist, errGoldNotEnought, errUpdateIncomeFailed, errBookNotEnought} from '../common/errCode.js'
+import { generateMessage} from '../common/utils.js'
 import * as bookDB from '../common/dbStructure/book.js'
 import * as userDB from '../common/dbStructure/user.js'
 import * as transectionDB from '../common/dbStructure/transection.js'
 import * as activityDB from '../common/dbStructure/activity.js'
 
-async function normalCalculatePrice(req:TransectionRequest, res:TransectionResponse): Promise<TransectionResponse> {
-    res.bookInfo = []
-    let totalPrice : number = 0
+class BookInf {
+    bookId: string
+    bookNumber : number
+    price: number 
+}
+
+class Answer {
+    errCode: number
+    totalPrice : number
+    activityType : number
+    activityInfo : string
+    booksInfo : BookInf[]
+    transectionTime :number
+
+    public toTransectionResponse(res:TransectionResponse) {
+        res.errCode = this.errCode
+        res.totalPrice = this.totalPrice
+        res.transectionTime = this.transectionTime
+        res.appliedActivityData = new ActivityReponseData()
+        res.appliedActivityData.activityInfo = this.activityInfo
+        res.appliedActivityData.activityType = this.activityType
+        res.bookInfo = []
+        for (let a of this.booksInfo) {
+            let b = new BookInfo()
+            b.bookId = a.bookId
+            b.bookNumber = a.bookNumber
+            b.price = a.price
+            res.bookInfo.push(b)
+        }
+    }
+}
+
+async function normalCalculatePrice(req:TransectionRequest, answer:Answer): Promise<Answer> {
+    let booksInfo: BookInf[] = []
+    let totalPrice: number = 0
     for (let book of req.bookInfo) {
-        let bookRes = new BookInfo()
+        let bookRes = new BookInf()
         let bookMongo = await bookDB.getBookById(book.bookId)
         if (bookMongo == null) {
             continue
@@ -29,87 +61,98 @@ async function normalCalculatePrice(req:TransectionRequest, res:TransectionRespo
         bookRes.bookId = book.bookId
         bookRes.bookNumber = book.bookNumber
         bookRes.price = price
-        res.bookInfo.push(bookRes)
+        booksInfo.push(bookRes)
         totalPrice += price * book.bookNumber
     }
-
-    res.totalPrice = totalPrice
-    res.errCode = errSuccess
-    return res
+    answer.booksInfo = booksInfo
+    answer.totalPrice = totalPrice
+    answer.errCode = errSuccess
+    return answer
 }
 
-async function calculatePriceType1(req:TransectionRequest, res:TransectionResponse): Promise<TransectionResponse>  {
+async function calculatePriceType1(req:TransectionRequest ,answer:Answer): Promise<Answer>  {
     let functionName = "calculatePriceType1"
-    res = await normalCalculatePrice(req, res) 
-    let activity = await activityDB.findActivityType1ById(req.activityID, res.transectionTime)
+    answer = await normalCalculatePrice(req, answer) 
+    let activity = await activityDB.findActivityType1ById(req.activityID, answer.transectionTime)
     if (activity == null) {
-        return res
+        return answer
     }
 
     let discount = 1
     try {
-        for(let level of activity.level) {
-            if (level.price > res.totalPrice) {
+        for(let level of activity.levelType1) {
+            if (level.price > answer.totalPrice) {
                 break
             } 
             discount = level.discount 
         }
     } catch (error) {
         logger.error(generateMessage("", functionName, "Activity config error", activity))
-        res.errCode = errMongo
-        return res
+        answer.errCode = errMongo
+        return answer
     }
 
     if (discount >= 0 && discount <=1) {
-        res.totalPrice = res.totalPrice * discount
+        answer.totalPrice = Math.floor(answer.totalPrice * discount) 
     } 
-    res.appliedActivityData.activityType = 1
-    res.appliedActivityData.activityInfo = JSON.stringify(activity) 
-    return res
+    answer.activityType = 1
+    answer.activityInfo = JSON.stringify(activity) 
+    return answer
 }
 
-async function calculatePriceType2(req:TransectionRequest, res:TransectionResponse): Promise<TransectionResponse>  {
+async function calculatePriceType2(req:TransectionRequest, answer:Answer): Promise<Answer>  {
     let functionName = "calculatePriceType2"
-    res = await normalCalculatePrice(req,res) 
-    let activity = await activityDB.findActivityType2ById(req.activityID, res.transectionTime)
+    answer = await normalCalculatePrice(req,answer) 
+    let activity = await activityDB.findActivityType2ById(req.activityID, answer.transectionTime)
     if (activity == null) {
-        return res
+        return answer
     } 
 
     let discount = 0
     try {
-        for(let level of activity.level) {
-            if (level.price > res.totalPrice) {
+        for(let level of activity.levelType2) {
+            if (level.price > answer.totalPrice) {
                 break
             } 
             discount = level.discount 
         }
     } catch (error) {
         logger.error(generateMessage("", functionName, "Activity config error", activity))
-        res.errCode = errMongo
-        return res
+        answer.errCode = errMongo
+        return answer
     }
 
-    if (discount >= 0 && discount <= res.totalPrice) {
-        res.totalPrice = res.totalPrice - discount
+    if (discount >= 0 && discount <= answer.totalPrice) {
+        answer.totalPrice = answer.totalPrice - discount
     } 
-    res.appliedActivityData.activityType = 2
-    res.appliedActivityData.activityInfo = JSON.stringify(activity) 
-    return res
+    answer.activityType = 2
+    answer.activityInfo = JSON.stringify(activity) 
+    return answer
 }
 
-async function calculatePriceType3(req:TransectionRequest, res:TransectionResponse): Promise<TransectionResponse>  {
+async function calculatePriceType3(req:TransectionRequest, answer:Answer): Promise<Answer>  {
     let functionName = "calculatePriceType3"
-    res = await normalCalculatePrice(req,res) 
-    let activity = await activityDB.findActivityType3ById(req.activityID, res.transectionTime)
+    answer = await normalCalculatePrice(req,answer) 
+    let activity = await activityDB.findActivityType3ById(req.activityID, answer.transectionTime)
     if (activity == null) {
-        return res
+        return answer
     } 
 
     let totalDiscount = 0
     try {
-       for(let bookInfo of res.bookInfo) {
-         for (let level of activity.level) {
+       for(let bookInfo of answer.booksInfo) {
+         for (let level of activity.levelType3) {
+            let contain = false
+            for (let id in level.bookIds) {
+                if (level.bookIds[id] == bookInfo.bookId) {
+                    contain = true
+                    break;
+                }
+            }
+            if (!contain) {
+                continue
+            }
+
             let by:number = level.by
             let give:number = level.give
             if (by <= 0 || give <= 0) {
@@ -119,7 +162,7 @@ async function calculatePriceType3(req:TransectionRequest, res:TransectionRespon
             if( book == null) {
                 continue
             }
-            let bookPrice:number =  book.price
+            let bookPrice:number = book.price
             if (bookPrice <= 0) {
                 continue
             }
@@ -128,30 +171,30 @@ async function calculatePriceType3(req:TransectionRequest, res:TransectionRespon
        }
     } catch (error) {
         logger.error(generateMessage("", functionName, "Activity config error", activity))
-        res.errCode = errMongo
-        return res
+        answer.errCode = errMongo
+        return answer
     }
 
-    res.totalPrice -= totalDiscount
-    res.appliedActivityData.activityType = 3
-    res.appliedActivityData.activityInfo = JSON.stringify(activity) 
-    return res
+    answer.totalPrice -= totalDiscount
+    answer.activityType = 3
+    answer.activityInfo = JSON.stringify(activity) 
+    return answer
 }
 
-async function calculatePrice(req:TransectionRequest): Promise<TransectionResponse> {
-    let now = new Date().getTime()
-    let res = new TransectionResponse()
-    res.transectionTime = now
-
+async function calculatePrice(req:TransectionRequest): Promise<Answer> {
+    let answer = new Answer()
+    answer.transectionTime = new Date().getTime()
     switch (req.activityType){
         case 1:
-            return await calculatePriceType1(req, res)
+            return await calculatePriceType1(req, answer)
         case 2:
-            return await calculatePriceType2(req, res)
+            return await calculatePriceType2(req, answer)
         case 3:
-            return await calculatePriceType3(req, res)
+            return await calculatePriceType3(req, answer)
         default:
-            return await normalCalculatePrice(req, res)
+            answer.activityInfo = ""
+            answer.activityType = 0
+            return await normalCalculatePrice(req, answer)
     }
 }
 
@@ -159,7 +202,6 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     let res:TransectionResponse = new TransectionResponse()
     let functionName:string = "transection"
     let req = call.request
-    let cost = 0
     logger.info(generateMessage("", functionName, "A new transection request started", call.request))
 
     let userExist = false
@@ -177,24 +219,45 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
         return
     }
     // 1. 算錢
-    res = await calculatePrice(req)
-    if (res.errCode != errSuccess) {
+    let answer = await calculatePrice(req)
+    if (answer.errCode != errSuccess) {
         callback(null,res)
         return
     }
-    cost = res.totalPrice 
+    answer.toTransectionResponse(res)
 
     // 2. writeDB
-    // let mongoSession = mongoClient.startSession()
-    let now = res.transectionTime
     const session = await mongoose.startSession();
-
+    let success = false
     try { 
         session.startTransaction();
-        await userDB.transection(req.username, req.userType, cost)
-        await transectionDB.insertLog(req.username, req.userType, req.activityID, now, cost, res.bookInfo) 
-        await transectionDB.updateBalance(now, cost)
-        res.totalPrice = cost
+        success = await userDB.transection(req.username, req.userType, answer.totalPrice, session)
+        if (!success) {
+            res.errCode = errGoldNotEnought
+            logger.warn(generateMessage(req.username, functionName, "Gold not enought", call.request))
+            await session.abortTransaction()
+            callback(null,res)
+            return
+        }
+        for (let book of req.bookInfo) {
+            success = await bookDB.takeBooks(book.bookId, book.bookNumber, session)
+            if (!success) {
+                res.errCode = errBookNotEnought
+                logger.warn(generateMessage(req.username, functionName, "Book not enought", call.request))
+                await session.abortTransaction()
+                callback(null,res)
+                return
+            }
+        }
+        await transectionDB.insertLog(req.username, req.userType, req.activityID, answer.transectionTime, answer.totalPrice, answer.booksInfo, session) 
+        success = await transectionDB.updateBalance(answer.transectionTime, answer.totalPrice, session)
+        if (!success) {
+            res.errCode = errUpdateIncomeFailed
+            logger.error(generateMessage(req.username, functionName, "Update balance failed", call.request))
+            await session.abortTransaction()
+            callback(null,res)
+            return
+        }
         await session.commitTransaction()
     } catch (error) {
         logger.error(generateMessage(req.username, functionName, "A mongoErr happens while searching user", call.request))
@@ -211,7 +274,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     callback(null,res)
 }
 
-export async function getTransectionRecord(call: ServerUnaryCall<TransectionRecordRequest, TransectionRecordResponse>, callback: sendUnaryData<TransectionRecordResponse>) {
+export async function transectionRecord(call: ServerUnaryCall<TransectionRecordRequest, TransectionRecordResponse>, callback: sendUnaryData<TransectionRecordResponse>) {
     let functionName:string = "TransectionRecord"
     let req = call.request
     let res = new TransectionRecordResponse()
@@ -219,25 +282,41 @@ export async function getTransectionRecord(call: ServerUnaryCall<TransectionReco
     try {
         count = await transectionDB.countLog(req.username ,req.accountType)
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching book", call.request))
+        logger.error(generateMessage("", functionName, "mongoErr happens while counting transection log", call.request))
         res.errCode = errMongo
         callback(error,res)
     }
 
     let records: TransectionRecord[] = []
     let record: TransectionRecord
-    let document : any
     try {
         let logs = await transectionDB.getLogData(req.username, req.accountType, req.pageSize, req.page, count)
         for (let log of logs) {
             record = new TransectionRecord()
-            record.transectionTime = log.transectionTime
+            record.transectionTime = log.time
             record.appliedActivityData = new ActivityReponseData()
-            let a = await activityDB.findActivityById(log.activityID, log.activityType)
-            record.appliedActivityData.activityInfo = JSON.stringify(a.level) 
-            record.appliedActivityData.activityType = a.type
-            record.appliedActivityData.startDate = a.startDate
-            record.appliedActivityData.endDate = a.endDate
+            try {
+                let a = await activityDB.findActivityById(log.activityID, log.activityType)
+                switch(a.type) {
+                    case 1:
+                        record.appliedActivityData.activityInfo = JSON.stringify(a.levelType1) 
+                        break;
+                    case 2:
+                        record.appliedActivityData.activityInfo = JSON.stringify(a.levelType2) 
+                        break;
+                    case 3:
+                        record.appliedActivityData.activityInfo = JSON.stringify(a.levelType3) 
+                        break;
+                    default :
+                    record.appliedActivityData.activityInfo = ""
+                    record.appliedActivityData.activityType = a.type
+                    record.appliedActivityData.startDate = a.startDate
+                    record.appliedActivityData.endDate = a.endDate
+                }
+            } catch {
+                record.appliedActivityData.activityInfo = ""
+            }
+            
             record.bookInfo = [] 
             for (let logBook of log.bookInfo) {
                 let book = new BookInfo()
@@ -250,7 +329,7 @@ export async function getTransectionRecord(call: ServerUnaryCall<TransectionReco
             records.push(record)
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching book", call.request))
+        logger.error(generateMessage("", functionName, "mongoErr happens while searching transection log", call.request))
         res.errCode = errMongo
         callback(error,res)
     }
