@@ -30,6 +30,7 @@ message ResendRegisterVerifyEmailRequest {
 
 message ResendRegisterVerifyEmailResponse {
     int32 errcode = 1;
+    string token = 2;
 }
 
 message LoginRequest {

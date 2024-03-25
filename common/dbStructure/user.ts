@@ -1,6 +1,7 @@
 
 
 import { Schema, Document, model, ClientSession} from 'mongoose';
+import {accountType} from '../config.js'
 
 class UserDocument extends Document {
     name : string
@@ -43,13 +44,17 @@ const NormalUserModel = model<NormalUserDocument>('NormalUser', NormalUserSchema
 const GoolgeUserModel = model<GoogleUserDocument>('GoolgeUser', GoogleUserSchema, "user")
 
 export async function normalUserExist(username:string): Promise<boolean> {
-    let doc = await NormalUserModel.findOne({username:username, accountType:0})
+    let doc = await NormalUserModel.findOne({username:username, accountType:accountType.normal})
+    return !(doc==null)
+}
+export async function normalUserExistWithPwd(username:string, password:string): Promise<boolean> {
+    let doc = await NormalUserModel.findOne({username:username, password:password, accountType:accountType.normal})
     return !(doc==null)
 }
 
 export async function insertNormalUser(username:string, password:string, email:string): Promise<void> {
     await NormalUserModel.create({
-        username:username, password: password, email: email, accountType:0, balance:0, emailVerified: 0 })
+        username:username, password: password, email: email, accountType:accountType.normal, balance:0, emailVerified: 0 })
 }
 
 export async function resetPassword(username:string, password:string, newPassword:string): Promise<boolean> {
@@ -57,19 +62,24 @@ export async function resetPassword(username:string, password:string, newPasswor
     return r.modifiedCount >0
 }
 
-export async function emailVerify(username:string): Promise<boolean> {
-    let doc = await NormalUserModel.findOneAndUpdate({username:username, emailVerified: {$ne:1}},{$set:{emailVerified:1}})
+export async function normalEmailCheckAndChange(username:string, email:string): Promise<boolean> {
+    let doc = await NormalUserModel.findOneAndUpdate({username:username, accountType:accountType.normal, emailVerified: 0},{$set:{email:email}})
+    return !(doc==null)
+}
+
+export async function normalEmailVerify(username:string): Promise<boolean> {
+    let doc = await NormalUserModel.findOneAndUpdate({username:username, accountType:accountType.normal, emailVerified: 0},{$set:{emailVerified:1}})
     return !(doc==null)
 }
 
 export async function googleUserExist(googleID:string): Promise<boolean> {
-    let doc = await GoolgeUserModel.findOne({googleID:googleID, accountType:1})
+    let doc = await GoolgeUserModel.findOne({googleID:googleID, accountType:accountType.google})
     return !(doc==null)
 }
 
 export async function insertGoogleUser(googleID:string, googleName:string, email:string): Promise<void> {
     await GoolgeUserModel.create({
-        googleID: googleID, username:googleName , email:email,  accountType:1, balance:0, emailVerified:1})
+        googleID: googleID, username:googleName , email:email,  accountType:accountType.google, balance:0, emailVerified:1})
 }
 
 export async function userExist(name:string, accountType:number): Promise<boolean> {
@@ -86,10 +96,10 @@ export async function userExist(name:string, accountType:number): Promise<boolea
 export async function transection(username:string, accountType:number, gold:number, session: ClientSession): Promise<boolean> {
     switch(accountType) {
         case 0:
-            let r0 =  await NormalUserModel.updateOne({username:username, accountType:0, balance:{$gte:gold}}, {$inc: { balance: -1*gold }}, {session:session})
+            let r0 =  await NormalUserModel.updateOne({username:username, accountType:accountType, balance:{$gte:gold}}, {$inc: { balance: -1*gold }}, {session:session})
             return r0.modifiedCount > 0
         case 1:
-            let r1 =  await GoolgeUserModel.updateOne({googleID:username, accountType:1, balance:{$gte:gold}}, {$inc: { balance: -1*gold }}, {session:session})
+            let r1 =  await GoolgeUserModel.updateOne({googleID:username, accountType:accountType, balance:{$gte:gold}}, {$inc: { balance: -1*gold }}, {session:session})
             return r1.modifiedCount > 0
         default:
             return false

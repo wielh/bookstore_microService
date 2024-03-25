@@ -5,6 +5,9 @@ export const errMicroServiceNotResponse = 3
 export const errMongo = 4
 export const errGoogleToken = 5
 export const errEmailVerifited = 6
+export const errToken = 7
+export const errUsernameTooShort = 8
+export const errPasswordTooShort = 9
 
 export const errUserExist = 10001
 export const errUserNotExist = 10002

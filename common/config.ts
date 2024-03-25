@@ -5,6 +5,7 @@ import  {createLogger,transports,format} from 'winston'
 import {credentials} from '@grpc/grpc-js'
 import {connect} from 'amqplib'
 import { google } from "googleapis";
+import {createTransport} from 'nodemailer'
 import mongoose from 'mongoose'
 
 export const logger = createLogger({
@@ -31,7 +32,7 @@ export const bookServiceClient = new BookServiceClient(bookServiceIP,credentials
 
 const transectionServicePort = 9503
 export const transectionServiceIP = `${IP}:${transectionServicePort}`
-export const transectionServiceClient = new TransectionServiceClient(bookServiceIP,credentials.createInsecure())
+export const transectionServiceClient = new TransectionServiceClient(transectionServiceIP,credentials.createInsecure())
 
 
 const mongoIP =`mongodb://127.0.0.1:27017/bookstore`   
@@ -51,7 +52,21 @@ export const rabbitMQConnection = await connect(rabbitMQURL);
 export enum channelName { getVerificationCode = "getVerificationCode"}
 
 export const googleVerifyID = "118619557524-26i4t5boire053d9pg59csddkf302tds.apps.googleusercontent.com"
-export const googleVerifyPassword = "***"
+export const googleVerifyPassword = "*****"
 export const googleCallbackUrl = basicUrl + "/account/google_callback"
-export const Oauth2Client = new google.auth.OAuth2(googleVerifyID,googleVerifyPassword,googleCallbackUrl)
-
+export const websiteEmail = 'wielh.erlow@gmail.com'
+export const transporter = createTransport(
+    {  
+        service: 'gmail',
+        port: 465,
+        secure: true,
+        auth: {
+            user: websiteEmail,
+            pass:"*****"
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    }
+);
+export enum accountType{normal=0,google=1}

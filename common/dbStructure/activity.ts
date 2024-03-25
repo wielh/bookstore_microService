@@ -26,7 +26,6 @@ class LevelType3 {
 }
 
 const activitySchema = new Schema({
-    activityID : String,
     type : Number,
     startDate : Number,
     endDate :Number

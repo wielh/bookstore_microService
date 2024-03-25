@@ -1,30 +1,11 @@
 
-import {createTransport} from 'nodemailer'
-import {rabbitMQConnection, channelName} from '../common/config.js' 
 
-const channel = await rabbitMQConnection.createChannel()
-await channel.assertQueue(channelName.getVerificationCode, { durable: true });
-await channel.assertQueue(channelName.getVerificationCode, { durable: true });
-
-export const websiteEmail = 'wielh.erlow@gmail.com'
-export const transporter = createTransport(
-    {
-        host: 'smtp.gmail.com',
-        port: 465,
-        auth: {
-            user: websiteEmail,
-            pass: '***',
-        },
-        tls: {
-            rejectUnauthorized: false
-        }
-    }
-);
+import {rabbitMQConnection, channelName, transporter ,websiteEmail} from '../common/config.js' 
 
 
 export async function sendMailImplementation(emailAddress:string, subject:string, message:string): Promise<boolean>{
     try {
-        await transporter.sendMail(
+        let x = await transporter.sendMail(
             {
                 from: websiteEmail,
                 to: emailAddress,
@@ -32,25 +13,26 @@ export async function sendMailImplementation(emailAddress:string, subject:string
                 html: message,
             }
         )
+        console.log(x)
     } catch (error) {
         return false;
     }
     return true
 }
 
+const options = { noAck: true };
 function sendEmail(channelName:string) {
     try {
-        const options = { noAck: true };
-        for (let i=0;i<1000;i++) {
-            channel.consume(channelName,
-                async (message) => {
-                    if (message !== null) {
-                        const emailMessage = JSON.parse(message.content.toString())
-                        await sendMailImplementation(emailMessage["emailAddress"], emailMessage["subject"] , emailMessage["message"])
-                    }
-                },options
-            );
-        }
+        channel.consume(channelName,
+            async (msg) => {
+                console.log("Hello!......")
+                if (msg !== null) {
+                    const emailMessage = JSON.parse(msg.content.toString())
+                    const {emailAddress, subject, message} = emailMessage
+                    await sendMailImplementation(emailAddress, subject, message)
+                }
+            }, options
+        );
     } catch (error) {
         console.error(error);
     }
@@ -60,4 +42,7 @@ function sendVerificationMail() {
     sendEmail(channelName.getVerificationCode)
 }
 
-setInterval(sendVerificationMail,1*1000)
+console.log("Hello, this is micro-mail")
+const channel = await rabbitMQConnection.createChannel()
+await channel.assertQueue(channelName.getVerificationCode, { durable: true});
+sendVerificationMail()

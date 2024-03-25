@@ -1,8 +1,8 @@
-import {Request, Response, json, Router, response} from 'express';
+import {Request, Response, json, Router} from 'express';
 import passport from 'passport';
-import {accountServiceClient, googleVerifyID, googleVerifyPassword, googleCallbackUrl, logger} from '../../../common/config.js'
-import {passwordHash, checkParameterFormat, generateMessage} from '../../../common/utils.js'
-import {errParameter,errMicroServiceNotResponse, errSuccess, errGoogleToken} from '../../../common/errCode.js'
+import {accountServiceClient, googleVerifyID, googleVerifyPassword, googleCallbackUrl, logger, accountType} from '../../../common/config.js'
+import {passwordHash, checkParameterFormat, generateMessage, decodeToken} from '../../../common/utils.js'
+import {errParameter,errMicroServiceNotResponse, errSuccess, errGoogleToken, errToken, errUsernameTooShort , errPasswordTooShort} from '../../../common/errCode.js'
 import * as a from '../../../proto/account.js'
 import { Profile, Strategy } from 'passport-google-oauth20';
 
@@ -14,8 +14,8 @@ export function registerServiceAccount(): Router{
     router.get("/google_login",passport.authenticate("google", {scope: ["email", "profile"]}), googleCallback)
     router.post('/login', json(), login)
     router.post('/reset_password', json(), resetPassword)
-    router.post('/resend_regiter_verify_email', json(), resendRegisterVerifyEmail)
-    router.post('/regiterVerify', json(), registerVerify)
+    router.post('/resend_register_verify_email', json(), resendRegisterVerifyEmail)
+    router.post('/register_verify', json(), registerVerify)
     return router
 }
 
@@ -26,11 +26,11 @@ const googleVerifyStrategy = new Strategy({
   }, function(accessToken:string, refreshToken:string, profile:Profile, cb) {
     let grpcReq = new a.GooogleLoginRequest
     grpcReq.googleID = profile.id
-    grpcReq.googleName = profile.name.givenName
-    grpcReq.googleEmail = profile.emails.values[0]
+    grpcReq.googleName = profile.name? profile.name.givenName:""
+    grpcReq.googleEmail = profile.emails? profile.emails.values[0]:""
     accountServiceClient.gooogleLogin(grpcReq,(error, response) => {
-        if (error || response.errcode) {
-            logger.warn(generateMessage(profile.name.givenName,"googleLogin","An googleLogin error happens", [error,response]))
+        if (error || !response || response.errcode) {
+            logger.warn(generateMessage(grpcReq.googleName,"googleLogin","An googleLogin error happens", [error,response]))
             return cb(null,{});
         }
         return cb(null,{token: response.token});
@@ -44,8 +44,18 @@ async function register(req:Request, res:Response):Promise<void> {
         !checkParameterFormat(req.body,"email","string")) {
         res.status(200).json({errCode: errParameter});
     }
-
     const {username, password, email} = req.body;
+
+    if (username.length < 6 ) {
+        res.status(200).json({errCode: errUsernameTooShort});
+        return
+    }
+
+    if (password.length < 6 ) {
+        res.status(200).json({errCode: errPasswordTooShort});
+        return
+    }
+
     let grpcReq = new a.RegisterRequest
     let account = new a.Base()
     account.username = username
@@ -56,8 +66,10 @@ async function register(req:Request, res:Response):Promise<void> {
     accountServiceClient.register(grpcReq,(error, response) => {
         if (error || !response) {
             res.status(200).json({errCode: errMicroServiceNotResponse});
+            return
         } else {
             res.status(200).json({errCode: response.errcode})
+            return
         }
     })
 }
@@ -65,6 +77,7 @@ async function register(req:Request, res:Response):Promise<void> {
 async function googleCallback(req:Request, res:Response) {
     if (!checkParameterFormat(req.body,"token","string")) {
         res.status(200).json({errCode: errGoogleToken});
+        return
     }
 
     const {token} = req.body;
@@ -76,6 +89,7 @@ async function login(req:Request, res:Response):Promise<void> {
     if (!checkParameterFormat(req.body,"username","string") || 
         !checkParameterFormat(req.body,"password","string")) {
         res.status(200).json({errCode: errParameter});
+        return
     }
 
     const {username, password} = req.body;
@@ -85,12 +99,21 @@ async function login(req:Request, res:Response):Promise<void> {
     account.password = passwordHash(password)
     grpcReq.base = account
 
+    if (username.length < 6 || password.length < 6) {
+        res.status(200).json({errCode: errToken})
+        return
+    }
+
     accountServiceClient.login(grpcReq,(error, response) => {
         if (error || !response) {
             res.status(200).json({errCode: errMicroServiceNotResponse});
+            return
         } else {
-            res.cookie("token", response.token)
+            if(response.errcode == errSuccess) {
+                res.cookie("token", response.token)
+            }
             res.status(200).json({errCode: response.errcode})
+            return
         }
     })
 }
@@ -100,6 +123,7 @@ async function resetPassword(req:Request, res:Response):Promise<void> {
         !checkParameterFormat(req.body,"password","string") ||
         !checkParameterFormat(req.body,"newPassword","string")) {
         res.status(200).json({errCode: errParameter});
+        return
     }
 
     const {username, password, newPassword} = req.body;
@@ -110,11 +134,18 @@ async function resetPassword(req:Request, res:Response):Promise<void> {
     grpcReq.base = account
     grpcReq.newPassword = passwordHash(newPassword)
 
+    if ( newPassword.length < 6 ) {
+        res.status(200).json({errCode: errPasswordTooShort});
+        return
+    }
+
     accountServiceClient.resetPassword(grpcReq,(error, response) => {
         if (error || !response) {
             res.status(200).json({errCode: errMicroServiceNotResponse});
+            return
         } else {
             res.status(200).json({errCode: response.errcode})
+            return
         }
     })
 }
@@ -130,25 +161,40 @@ async function resendRegisterVerifyEmail(req:Request, res:Response):Promise<void
     accountServiceClient.resendRegisterVerifyEmail(grpcReq,(error, response) => {
         if (error || !response) {
             res.status(200).json({errCode: errMicroServiceNotResponse});
+            return
         } else {
             res.status(200).json({errCode: response.errcode})
+            return
         }
     })
 }
 
 async function registerVerify(req:Request, res:Response):Promise<void>{
-    const {username, password} = req.body;
+    const cookie = req.headers.cookie
+    if (!cookie || cookie.length <= ("token=".length) || !cookie.startsWith("token=")) {
+        res.status(200).json({errCode: errToken});
+        return
+    }
+    const token = cookie.substring("token=".length);
+
+    const tokenJson = decodeToken(token);
+    const {username} = tokenJson
     let grpcReq = new a.RegisterVerifyRequest
     let account = new a.Base()
+    if ( !username || username.length == 0) {
+        res.status(200).json({errCode: errToken});
+        return
+    }
     account.username = username
-    account.password = passwordHash(password)
     grpcReq.base = account
 
-    accountServiceClient.regiterVerify(grpcReq,(error, response) => {
+    accountServiceClient.registerVerify(grpcReq,(error, response) => {
         if (error || !response) {
             res.status(200).json({errCode: errMicroServiceNotResponse});
+            return
         } else {
             res.status(200).json({errCode: response.errcode})
+            return
         }
     })
 }

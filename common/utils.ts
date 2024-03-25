@@ -13,7 +13,7 @@ export function passwordHash(password:string):string {
 };
 
 export function checkParameterFormat(object:any, key:string, typeof_value:string, optional?:boolean): boolean{
-    if( object[key] === undefined || object[key] === null) {
+    if( !(key in object) || object[key] === null) {
         if (!optional) {
             return false
         }
@@ -74,12 +74,12 @@ export function createToken(json:any, second:number):string{
 export class pageX {
     pageSize: number
     count: number
-    pageNumber: number
+    totalPageNumber: number
 
     public constructor(pageSize:number, count:number){
         this.pageSize =  pageSize>2 ? pageSize:10
         this.count = count>0? count:0
-        this.pageNumber = Math.floor(count/pageSize) + ((count%pageSize>0)?1:0)
+        this.totalPageNumber = Math.floor(this.count/this.pageSize) + ((this.count%this.pageSize>0)?1:0)
     }
 
     public getPageSize():number {
@@ -91,23 +91,23 @@ export class pageX {
     }
 
     public getTotalPageNumber():number {
-        return this.pageNumber
+        return this.totalPageNumber
     }
 
     public getPageNumber(pageNumber:number):number {
         if(pageNumber < 0){
             return 0
-        } else if (pageNumber >= this.pageNumber) {
-            return this.pageNumber-1
+        } else if (pageNumber >= this.totalPageNumber) {
+            return this.totalPageNumber-1
         } 
         return Math.floor(pageNumber)
     }
 
     public getSkip(currentPage:number):number{
-        if (currentPage <= 0 || this.pageNumber<=0 ) {
+        if (currentPage <= 0 || this.totalPageNumber<=0 ) {
             return 0
-        } else if ( currentPage >= this.pageNumber) {
-            return (this.pageNumber -1 )* this.pageSize
+        } else if ( currentPage >= this.totalPageNumber) {
+            return (this.totalPageNumber -1 )* this.pageSize
         }
 
         return currentPage * this.pageSize

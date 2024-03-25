@@ -60,5 +60,7 @@ message TransectionRecordResponse {
     int32 errCode = 1; 
     string username = 2;
     int32 recordNumber = 3;
-    repeated TransectionRecord transectionRecords = 4;
+    int32 page = 4;
+    int32 pageSize = 5;
+    repeated TransectionRecord transectionRecords = 6;
 }

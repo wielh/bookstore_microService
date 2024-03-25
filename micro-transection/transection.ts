@@ -5,7 +5,7 @@ import mongoose from 'mongoose'
 import {TransectionRequest, TransectionResponse, TransectionRecordRequest, TransectionRecordResponse, TransectionRecord, ActivityReponseData, BookInfo} from '../proto/transection.js'
 import { logger} from '../common/config.js'
 import { errMongo, errSuccess, errUserNotExist, errGoldNotEnought, errUpdateIncomeFailed, errBookNotEnought} from '../common/errCode.js'
-import { generateMessage} from '../common/utils.js'
+import { generateMessage, pageX} from '../common/utils.js'
 import * as bookDB from '../common/dbStructure/book.js'
 import * as userDB from '../common/dbStructure/user.js'
 import * as transectionDB from '../common/dbStructure/transection.js'
@@ -249,7 +249,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
                 return
             }
         }
-        await transectionDB.insertLog(req.username, req.userType, req.activityID, answer.transectionTime, answer.totalPrice, answer.booksInfo, session) 
+        await transectionDB.insertLog(req.username, req.userType, req.activityID,  req.activityType, answer.transectionTime, answer.totalPrice, answer.booksInfo, session) 
         success = await transectionDB.updateBalance(answer.transectionTime, answer.totalPrice, session)
         if (!success) {
             res.errCode = errUpdateIncomeFailed
@@ -289,31 +289,38 @@ export async function transectionRecord(call: ServerUnaryCall<TransectionRecordR
 
     let records: TransectionRecord[] = []
     let record: TransectionRecord
+    let p = new pageX(req.pageSize, count)
     try {
-        let logs = await transectionDB.getLogData(req.username, req.accountType, req.pageSize, req.page, count)
+        let logs = await transectionDB.getLogData(req.username, req.accountType, p, req.page)
         for (let log of logs) {
             record = new TransectionRecord()
             record.transectionTime = log.time
-            record.appliedActivityData = new ActivityReponseData()
+            record.appliedActivityData = new ActivityReponseData()      
             try {
                 let a = await activityDB.findActivityById(log.activityID, log.activityType)
                 switch(a.type) {
                     case 1:
                         record.appliedActivityData.activityInfo = JSON.stringify(a.levelType1) 
+                        record.appliedActivityData.activityType = a.type
+                        record.appliedActivityData.startDate = a.startDate
+                        record.appliedActivityData.endDate = a.endDate
                         break;
                     case 2:
                         record.appliedActivityData.activityInfo = JSON.stringify(a.levelType2) 
+                        record.appliedActivityData.activityType = a.type
+                        record.appliedActivityData.startDate = a.startDate
+                        record.appliedActivityData.endDate = a.endDate
                         break;
                     case 3:
                         record.appliedActivityData.activityInfo = JSON.stringify(a.levelType3) 
+                        record.appliedActivityData.activityType = a.type
+                        record.appliedActivityData.startDate = a.startDate
+                        record.appliedActivityData.endDate = a.endDate
                         break;
                     default :
-                    record.appliedActivityData.activityInfo = ""
-                    record.appliedActivityData.activityType = a.type
-                    record.appliedActivityData.startDate = a.startDate
-                    record.appliedActivityData.endDate = a.endDate
+                        record.appliedActivityData.activityInfo = ""
                 }
-            } catch {
+            } catch(err) {
                 record.appliedActivityData.activityInfo = ""
             }
             
@@ -336,6 +343,8 @@ export async function transectionRecord(call: ServerUnaryCall<TransectionRecordR
 
     res.errCode = errSuccess
     res.recordNumber = count
+    res.page = p.getPageNumber(req.page)
+    res.pageSize = p.pageSize
     res.transectionRecords = records
     callback(null,res)
 }

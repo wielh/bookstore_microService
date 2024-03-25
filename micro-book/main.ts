@@ -17,6 +17,7 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
         logger.error(generateMessage("", functionName, "mongoErr happens while searching book", JSON.stringify({"req": req})))
         res.errcode = errMongo
         callback(null,res)
+        return
     }
 
     let pageConfig = new pageX(req.pageSize, bookCount)
@@ -40,6 +41,7 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
         logger.error(generateMessage("", functionName, "mongoErr happens while searching book",  JSON.stringify({"req": req})))
         res.errcode = errMongo
         callback(null,res)
+        return
     }
 
     res.errcode = errSuccess
