@@ -4,9 +4,9 @@ import {TransectionServiceClient} from '../proto/transection.js'
 import  {createLogger,transports,format} from 'winston'
 import {credentials} from '@grpc/grpc-js'
 import {connect} from 'amqplib'
-import { google } from "googleapis";
 import {createTransport} from 'nodemailer'
 import mongoose from 'mongoose'
+import { google } from "googleapis";
 
 export const logger = createLogger({
     level: 'info',
@@ -51,9 +51,10 @@ const rabbitMQURL = `amqp://${rabbitMQUsername}:${rabbitMQPassword}@${rabbitMQSe
 export const rabbitMQConnection = await connect(rabbitMQURL);
 export enum channelName { getVerificationCode = "getVerificationCode"}
 
-export const googleVerifyID = "118619557524-26i4t5boire053d9pg59csddkf302tds.apps.googleusercontent.com"
+export const googleVerifyID = "118619557524-ej7k7ceopnn8glgi9foksta3t72vnca3.apps.googleusercontent.com"
 export const googleVerifyPassword = "*****"
-export const googleCallbackUrl = basicUrl + "/account/google_callback"
+export const googleCallbackUrl =  "http://"+ basicUrl + "/account/google_callback"
+export const oauth2Client = new google.auth.OAuth2(googleVerifyID,googleVerifyPassword,googleCallbackUrl)
 export const websiteEmail = 'wielh.erlow@gmail.com'
 export const transporter = createTransport(
     {  
@@ -69,4 +70,11 @@ export const transporter = createTransport(
         }
     }
 );
+export const googleVerificationUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: ["email","profile"],
+    include_granted_scopes: true
+});
+console.log(googleVerificationUrl)
+
 export enum accountType{normal=0,google=1}

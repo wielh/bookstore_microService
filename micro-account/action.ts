@@ -4,15 +4,15 @@ import { GooogleLoginRequest, GooogleLoginResponse, LoginRequest, LoginResponse,
     ResendRegisterVerifyEmailResponse,RegisterVerifyRequest,RegisterVerifyResponse} from "../proto/account.js";
 import { logger,tokenExpireSecond, basicUrl, accountType} from '../common/config.js'
 import {errSuccess, errMongo, errUserExist, errUserNotExist, errSendRegisterEmailFailed, errEmailVerifited} from '../common/errCode.js'
-import {generateMessage,createToken, sendMailProducer} from '../common/utils.js'
+import {generateMessage,createToken, sendMailProducer, decodeToken} from '../common/utils.js'
 import * as userDB from '../common/dbStructure/user.js'
 
 export async function resendRegiterVerifyEmailImplementation(username:string, email:string): Promise<number> {
     let verificationCode = createToken({username:username, accountType:0 , email: email},60*60)
     const emailInfo =
         ` Hello, user ${username}, this is QueenStore bookstore.` +
-        ` Please enter the website: ${basicUrl}/register_verify/${verificationCode} `+
-        ` to reset your password in our website.`+
+        ` Please enter the website: ${basicUrl}/account/register_verify?token=${verificationCode} `+
+        ` to complete email varification.`+
         ` If you are not a member. Please ignore this.`;
 
     let sendEmailSuccess = await sendMailProducer(email, "register email verificaition", emailInfo)

@@ -1,17 +1,19 @@
-import {Request, Response, json, Router} from 'express';
+import {Request, Response, json, Router } from 'express';
 import passport from 'passport';
-import {accountServiceClient, googleVerifyID, googleVerifyPassword, googleCallbackUrl, logger, accountType} from '../../../common/config.js'
+import {accountServiceClient, googleVerifyID, googleVerifyPassword, googleCallbackUrl, logger, oauth2Client} from '../../../common/config.js'
 import {passwordHash, checkParameterFormat, generateMessage, decodeToken} from '../../../common/utils.js'
 import {errParameter,errMicroServiceNotResponse, errSuccess, errGoogleToken, errToken, errUsernameTooShort , errPasswordTooShort} from '../../../common/errCode.js'
 import * as a from '../../../proto/account.js'
 import { Profile, Strategy } from 'passport-google-oauth20';
+import {google} from 'googleapis'
+
 
 export function registerServiceAccount(): Router{
     let router = Router()
     router.post('/register', json(), register)
     router.use(passport.initialize());
     passport.use(googleVerifyStrategy)
-    router.get("/google_login",passport.authenticate("google", {scope: ["email", "profile"]}), googleCallback)
+    router.get("/google_callback",passport.authenticate("google", {scope: ["email", "profile"], session:false}), googleCallback)
     router.post('/login', json(), login)
     router.post('/reset_password', json(), resetPassword)
     router.post('/resend_register_verify_email', json(), resendRegisterVerifyEmail)
@@ -27,8 +29,8 @@ const googleVerifyStrategy = new Strategy({
     let grpcReq = new a.GooogleLoginRequest
     grpcReq.googleID = profile.id
     grpcReq.googleName = profile.name? profile.name.givenName:""
-    grpcReq.googleEmail = profile.emails? profile.emails.values[0]:""
-    accountServiceClient.gooogleLogin(grpcReq,(error, response) => {
+    grpcReq.googleEmail = profile.emails? profile.emails[0].value:""
+    accountServiceClient.googleLogin(grpcReq,(error, response) => {
         if (error || !response || response.errcode) {
             logger.warn(generateMessage(grpcReq.googleName,"googleLogin","An googleLogin error happens", [error,response]))
             return cb(null,{});
@@ -75,13 +77,12 @@ async function register(req:Request, res:Response):Promise<void> {
 }
 
 async function googleCallback(req:Request, res:Response) {
-    if (!checkParameterFormat(req.body,"token","string")) {
+    try {
+        res.cookie("token", req.user["token"] as string)
+    } catch {
         res.status(200).json({errCode: errGoogleToken});
         return
     }
-
-    const {token} = req.body;
-    res.cookie("token", token)
     res.status(200).json({errCode: errSuccess})
 }
 
@@ -170,24 +171,32 @@ async function resendRegisterVerifyEmail(req:Request, res:Response):Promise<void
 }
 
 async function registerVerify(req:Request, res:Response):Promise<void>{
-    const cookie = req.headers.cookie
-    if (!cookie || cookie.length <= ("token=".length) || !cookie.startsWith("token=")) {
+    let tokenStr = ""
+    try {
+        tokenStr = req.query.token as string
+        if (!tokenStr || tokenStr .length <= 0) {
+            res.status(200).json({errCode: errToken});
+            return
+        }
+    } catch (error) {
         res.status(200).json({errCode: errToken});
-        return
     }
-    const token = cookie.substring("token=".length);
 
-    const tokenJson = decodeToken(token);
-    const {username} = tokenJson
-    let grpcReq = new a.RegisterVerifyRequest
     let account = new a.Base()
-    if ( !username || username.length == 0) {
+    try {
+        const tokenJson = decodeToken(tokenStr);
+        const {username} = tokenJson
+        if( !username || username.length == 0) {
+            res.status(200).json({errCode: errToken});
+            return
+        }
+        account.username = username
+    } catch (error) {
         res.status(200).json({errCode: errToken});
-        return
     }
-    account.username = username
+    let grpcReq = new a.RegisterVerifyRequest
     grpcReq.base = account
-
+ 
     accountServiceClient.registerVerify(grpcReq,(error, response) => {
         if (error || !response) {
             res.status(200).json({errCode: errMicroServiceNotResponse});

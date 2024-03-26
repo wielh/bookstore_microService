@@ -3,7 +3,7 @@ syntax = "proto3";
 service AccountService {
     rpc register (RegisterRequest) returns (RegisterResponse);
     rpc login (LoginRequest) returns (LoginResponse);
-    rpc gooogleLogin (GooogleLoginRequest) returns (GooogleLoginResponse);
+    rpc googleLogin (GooogleLoginRequest) returns (GooogleLoginResponse);
     rpc resendRegisterVerifyEmail (ResendRegisterVerifyEmailRequest) returns (ResendRegisterVerifyEmailResponse);
     rpc registerVerify (RegisterVerifyRequest) returns (RegisterVerifyResponse);
     rpc resetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);

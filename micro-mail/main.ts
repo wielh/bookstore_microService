@@ -13,7 +13,6 @@ export async function sendMailImplementation(emailAddress:string, subject:string
                 html: message,
             }
         )
-        console.log(x)
     } catch (error) {
         return false;
     }
@@ -25,9 +24,9 @@ function sendEmail(channelName:string) {
     try {
         channel.consume(channelName,
             async (msg) => {
-                console.log("Hello!......")
                 if (msg !== null) {
                     const emailMessage = JSON.parse(msg.content.toString())
+                    console.log(emailMessage)
                     const {emailAddress, subject, message} = emailMessage
                     await sendMailImplementation(emailAddress, subject, message)
                 }
