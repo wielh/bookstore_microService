@@ -79,7 +79,7 @@ export async function googleUserExist(googleID:string): Promise<boolean> {
 
 export async function insertGoogleUser(googleID:string, googleName:string, email:string): Promise<void> {
     await GoolgeUserModel.create({
-        googleID: googleID, username:googleName , email:email,  accountType:accountType.google, balance:0, emailVerified:1})
+        googleID: googleID, name:googleName , email:email,  accountType:accountType.google, balance:0, emailVerified:1})
 }
 
 export async function userExist(name:string, accountType:number): Promise<boolean> {

@@ -5,3 +5,4 @@ package-lock.json
 note.txt
 .gitignore
 *.js
+!mongo-script.js
