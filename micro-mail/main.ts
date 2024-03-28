@@ -42,6 +42,7 @@ function sendVerificationMail() {
 }
 
 console.log("Hello, this is micro-mail")
-const channel = await rabbitMQConnection.createChannel()
+const conn = await rabbitMQConnection()
+const channel = await conn.createChannel()
 await channel.assertQueue(channelName.getVerificationCode, { durable: true});
 sendVerificationMail()

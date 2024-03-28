@@ -3,7 +3,7 @@ import {BookServiceClient} from '../proto/book.js'
 import {TransectionServiceClient} from '../proto/transection.js'
 import  {createLogger,transports,format} from 'winston'
 import {credentials} from '@grpc/grpc-js'
-import {connect} from 'amqplib'
+import {connect, Connection} from 'amqplib'
 import {createTransport} from 'nodemailer'
 import mongoose from 'mongoose'
 import { google } from "googleapis";
@@ -40,7 +40,6 @@ export async function mongooseConnection() {
     mongoose.connect(mongoIP)
     .then(() => console.log('Connected to MongoDB'))
     .catch(error => console.error('Error connecting to MongoDB:', error));
-
 }
 
 const rabbitMQPort = 5672
@@ -48,7 +47,10 @@ const rabbitMQUsername = 'root';
 const rabbitMQPassword = '1234';
 const rabbitMQServer = 'localhost' // <docker container name> rabbitmq or localhost
 const rabbitMQURL = `amqp://${rabbitMQUsername}:${rabbitMQPassword}@${rabbitMQServer}:${rabbitMQPort}/`;
-export const rabbitMQConnection = await connect(rabbitMQURL);
+export async function rabbitMQConnection(): Promise<Connection> {
+    const rabbitMQConnection = await connect(rabbitMQURL);
+    return rabbitMQConnection
+}
 export enum channelName { getVerificationCode = "getVerificationCode"}
 
 export const googleVerifyID = "118619557524-ej7k7ceopnn8glgi9foksta3t72vnca3.apps.googleusercontent.com"

@@ -2,7 +2,8 @@ import {createHmac} from "crypto";
 import jwt from 'jsonwebtoken';
 
 import {hashSalt} from "./config.js";
-import {tokenKey,rabbitMQConnection, channelName} from '../common/config.js'
+import {tokenKey, channelName} from '../common/config.js'
+import {Connection} from 'amqplib'
 
 
 export function passwordHash(password:string):string {
@@ -120,7 +121,7 @@ export function getCurrentMonthFirstDayTimestamp(currentDateTime:number): number
     return MonthlyFirstDay.getTime();
 }
 
-export async function sendMailProducer(emailAddress:string, subject:string , message:string): Promise<boolean>{
+export async function sendMailProducer(rabbitMQConnection:Connection, emailAddress:string, subject:string , message:string): Promise<boolean>{
     try {
         const channel = await rabbitMQConnection.createChannel();
         await channel.assertQueue(channelName.getVerificationCode, { durable: true });
