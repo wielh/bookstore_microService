@@ -43,10 +43,11 @@ const googleVerifyStrategy = new Strategy({
 async function register(req:Request, res:Response):Promise<void> {
     if (!checkParameterFormat(req.body,"username","string") || 
         !checkParameterFormat(req.body,"password","string") ||
-        !checkParameterFormat(req.body,"email","string")) {
+        !checkParameterFormat(req.body,"email","string") ||
+        !checkParameterFormat(req.body,"name","string")) {
         res.status(200).json({errCode: errParameter});
     }
-    const {username, password, email} = req.body;
+    const {username, password, email, name} = req.body;
 
     if (username.length < 6 ) {
         res.status(200).json({errCode: errUsernameTooShort});
@@ -64,6 +65,7 @@ async function register(req:Request, res:Response):Promise<void> {
     account.password = passwordHash(password)
     grpcReq.base = account
     grpcReq.email = email
+    grpcReq.name = name
 
     accountServiceClient.register(grpcReq,(error, response) => {
         if (error || !response) {

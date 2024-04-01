@@ -38,7 +38,6 @@ const activityModel = model<ActivityDocument>('activity', activitySchema, 'activ
 
 export async function findActivities(timeStamp:number){
     let activitys = await activityModel.find({startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}}).limit(1000).exec()
-    console.log(activitys)
     return activitys
 }
 

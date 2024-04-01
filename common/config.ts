@@ -6,7 +6,8 @@ import {credentials} from '@grpc/grpc-js'
 import {connect, Connection} from 'amqplib'
 import {createTransport} from 'nodemailer'
 import mongoose from 'mongoose'
-import { google } from "googleapis";
+import {google}  from "googleapis";
+import { OAuth2Client } from 'google-auth-library';
 
 export const logger = createLogger({
     level: 'info',
@@ -18,46 +19,129 @@ export const hashSalt:string = "qwertasdfgzxcvb"
 export const tokenKey:string = "abcdefghijklmnopqrstuvwxyz"
 export const tokenExpireSecond: number = 24*60*60
 
-export const IP = "127.0.0.1"
-export const gatePort: number = 3000
-export const basicUrl = `${IP}:${gatePort}`
+export enum accountType {normal=0,google=1}
+export enum Port { gate = 3000, microAccount = 9501, microBook=9502, microTransection = 9503, microMail = 9504, mongo = 27017, rabbitMQ = 5672}
 
-const accountServicePort = 9501
-export const accountServiceIP = `${IP}:${accountServicePort}`
-export const accountServiceClient = new AccountServiceClient(accountServiceIP,credentials.createInsecure())
-
-const bookServicePort = 9502
-export const bookServiceIP = `${IP}:${bookServicePort}`
-export const bookServiceClient = new BookServiceClient(bookServiceIP,credentials.createInsecure())
-
-const transectionServicePort = 9503
-export const transectionServiceIP = `${IP}:${transectionServicePort}`
-export const transectionServiceClient = new TransectionServiceClient(transectionServiceIP,credentials.createInsecure())
-
-
-const mongoIP =`mongodb://127.0.0.1:27017/bookstore`   
-export async function mongooseConnection() {
-    mongoose.connect(mongoIP)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(error => console.error('Error connecting to MongoDB:', error));
+function getURL(IP:string, Port:number):string{
+    return `${IP}:${Port}`
 }
 
-const rabbitMQPort = 5672
+class IPSetting {
+    gateIP: string
+    accountServiceIP: string
+    bookServiceIP: string
+    transectionServiceIP: string
+    rabbitMQIP: string
+    mongodbIP: string
+    mailIP: string
+}
+
+export let currentIPSetting: IPSetting
+export let gateURL:string = ""
+export let accountServiceURL = ""
+export let accountServiceClient:AccountServiceClient
+export let bookServiceURL = ""
+export let bookServiceClient:BookServiceClient
+export let transectionServiceURL = ""
+export let transectionServiceClient:TransectionServiceClient
+export let mongoURL = ""
 const rabbitMQUsername = 'root';
 const rabbitMQPassword = '1234';
-const rabbitMQServer = 'localhost' // <docker container name> rabbitmq or localhost
-const rabbitMQURL = `amqp://${rabbitMQUsername}:${rabbitMQPassword}@${rabbitMQServer}:${rabbitMQPort}/`;
-export async function rabbitMQConnection(): Promise<Connection> {
-    const rabbitMQConnection = await connect(rabbitMQURL);
-    return rabbitMQConnection
-}
-export enum channelName { getVerificationCode = "getVerificationCode"}
+const mongoUsername = 'bookstore_user';
+const mongoPassword = 'test';
+export let googleCallbackUrl = ""
+export let rabbitMQConnection:Connection
 
+const localhostSetting = {
+    gateIP : "127.0.0.1",
+    accountServiceIP : "127.0.0.1",
+    bookServiceIP : "127.0.0.1",
+    transectionServiceIP : "127.0.0.1",
+    rabbitMQIP : "localhost",
+    mongodbIP : `127.0.0.1`,
+    mailIP : "127.0.0.1"
+}
+
+const dockerSetting = {
+    gateIP : "172.22.0.2",
+    accountServiceIP : "172.22.0.3",
+    bookServiceIP : "172.22.0.4",
+    transectionServiceIP : "172.22.0.5",
+    rabbitMQIP : "172.22.0.6",
+    mongodbIP : `host.docker.abc`,     //localhost IP
+    mailIP : "172.22.0.7",
+}
+
+export enum channelName { getVerificationCode = "getVerificationCode"}
 export const googleVerifyID = "118619557524-ej7k7ceopnn8glgi9foksta3t72vnca3.apps.googleusercontent.com"
 export const googleVerifyPassword = "*****"
-export const googleCallbackUrl =  "http://"+ basicUrl + "/account/google_callback"
-export const oauth2Client = new google.auth.OAuth2(googleVerifyID,googleVerifyPassword,googleCallbackUrl)
 export const websiteEmail = 'wielh.erlow@gmail.com'
+export let googleVerificationUrl = ""
+export let oauth2Client:OAuth2Client
+
+function getIPSetting() {
+    const args: string[] = process.argv;
+    if (args.length <= 2) {
+        currentIPSetting = localhostSetting
+        return
+    }
+
+    try {
+        let type = parseInt(args[2])
+        switch(type) {
+            case 1:
+                currentIPSetting = dockerSetting
+                break
+            default:
+                currentIPSetting = localhostSetting
+                break
+        }
+    } catch (error) {
+        currentIPSetting = localhostSetting
+        return
+    }
+} 
+
+async function URLInit() {
+    getIPSetting()
+    let c = currentIPSetting
+
+    gateURL = getURL(c.gateIP, Port.gate)
+    googleCallbackUrl = `http://${gateURL}/account/google_callback`
+    oauth2Client = new google.auth.OAuth2(googleVerifyID,googleVerifyPassword,googleCallbackUrl)
+    googleVerificationUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: ["email","profile"],
+        include_granted_scopes: true
+    });
+    console.log(googleVerificationUrl)
+
+    accountServiceURL = getURL(c.accountServiceIP, Port.microAccount)
+    accountServiceClient = new AccountServiceClient(accountServiceURL , credentials.createInsecure())
+    
+    bookServiceURL = getURL(c.bookServiceIP, Port.microBook)
+    bookServiceClient = new BookServiceClient(bookServiceURL , credentials.createInsecure())
+    
+    transectionServiceURL = getURL(c.transectionServiceIP, Port.microTransection)
+    transectionServiceClient = new TransectionServiceClient(transectionServiceURL,credentials.createInsecure())
+ 
+    try {
+        let mongoStr = `mongodb://${mongoUsername}:${mongoPassword}@${getURL(c.mongodbIP,Port.mongo)}`
+        await mongoose.connect(mongoStr, {dbName:"bookstore", readPreference:"secondaryPreferred",  
+            directConnection:true , serverSelectionTimeoutMS:2000, authSource: "bookstore"})
+    } catch(error) {
+        console.error('Error connecting to MongoDB with host:', error);
+    } 
+
+    const rabbitMQURL = getURL(c.rabbitMQIP, Port.rabbitMQ)
+    const rabbitMQConenctionStr = `amqp://${rabbitMQUsername}:${rabbitMQPassword}@${rabbitMQURL}/`;
+    try {
+        rabbitMQConnection = await connect(rabbitMQConenctionStr);
+    } catch(err) {
+        console.error('Error connecting to rabbitMQ with host:', err);
+    }
+}
+
 export const transporter = createTransport(
     {  
         service: 'gmail',
@@ -65,18 +149,12 @@ export const transporter = createTransport(
         secure: true,
         auth: {
             user: websiteEmail,
-            pass:"*****"
+            pass:"***"
         },
         tls: {
             rejectUnauthorized: false
         }
     }
 );
-export const googleVerificationUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: ["email","profile"],
-    include_granted_scopes: true
-});
-console.log(googleVerificationUrl)
 
-export enum accountType{normal=0,google=1}
+await URLInit()

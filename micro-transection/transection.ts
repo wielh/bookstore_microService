@@ -46,7 +46,11 @@ class Answer {
 async function normalCalculatePrice(req:TransectionRequest, answer:Answer): Promise<Answer> {
     let booksInfo: BookInf[] = []
     let totalPrice: number = 0
+    let bookIdSet : Set<number> = new Set();
     for (let book of req.bookInfo) {
+
+        
+
         let bookRes = new BookInf()
         let bookMongo = await bookDB.getBookById(book.bookId)
         if (bookMongo == null) {

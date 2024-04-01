@@ -2,21 +2,20 @@ import * as grpc from "@grpc/grpc-js";
 import { GooogleLoginRequest, GooogleLoginResponse, LoginRequest, LoginResponse, 
     RegisterRequest, RegisterResponse, ResetPasswordRequest, ResetPasswordResponse, ResendRegisterVerifyEmailRequest,
     ResendRegisterVerifyEmailResponse,RegisterVerifyRequest,RegisterVerifyResponse} from "../proto/account.js";
-import { logger,tokenExpireSecond, basicUrl, accountType} from '../common/config.js'
+import { logger,tokenExpireSecond, gateURL, accountType, rabbitMQConnection} from '../common/config.js'
 import {errSuccess, errMongo, errUserExist, errUserNotExist, errSendRegisterEmailFailed, errEmailVerifited} from '../common/errCode.js'
 import {generateMessage,createToken, sendMailProducer} from '../common/utils.js'
-import {rabbitMQConn} from './main.js'
 import * as userDB from '../common/dbStructure/user.js'
 
 export async function resendRegiterVerifyEmailImplementation(username:string, email:string): Promise<number> {
     let verificationCode = createToken({username:username, accountType:0 , email: email},60*60)
     const emailInfo =
         ` Hello, user ${username}, this is QueenStore bookstore.` +
-        ` Please enter the website: ${basicUrl}/account/register_verify?token=${verificationCode} `+
+        ` Please enter the website: ${gateURL}/account/register_verify?token=${verificationCode} `+
         ` to complete email varification.`+
         ` If you are not a member. Please ignore this.`;
 
-    let sendEmailSuccess = await sendMailProducer(rabbitMQConn, email, "register email verificaition", emailInfo)
+    let sendEmailSuccess = await sendMailProducer(rabbitMQConnection, email, "register email verificaition", emailInfo)
     return sendEmailSuccess?  errSuccess: errSendRegisterEmailFailed
 } 
 
@@ -39,7 +38,7 @@ export async function register(call: grpc.ServerUnaryCall<RegisterRequest, Regis
     }
 
     try {
-        await userDB.insertNormalUser(req.base.username, req.base.password, req.email)
+        await userDB.insertNormalUser(req.base.username, req.base.password, req.email , req.name)
     } catch (error) {
         logger.error(generateMessage(req .base.username, functionName, "mongoErr happens while insert new data to collection user", req))
         res.errcode = errMongo
@@ -98,7 +97,7 @@ export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest
     let functionName:string = "googleLogin"
     let req = call.request
     let res = new GooogleLoginResponse()
-    let exist = false
+    let exist = true
     try {
         exist = await userDB.googleUserExist(req.googleID)
     } catch (error) {

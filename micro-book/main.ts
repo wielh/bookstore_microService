@@ -1,5 +1,5 @@
 import * as grpc from "@grpc/grpc-js";
-import { logger, bookServiceIP,mongooseConnection } from '../common/config.js'
+import { logger, bookServiceURL} from '../common/config.js'
 import {Book, BookListRequest, BookListResponse,UnimplementedBookServiceService, BookData} from "../proto/book.js";
 import {errMongo, errSuccess} from '../common/errCode.js'
 import {generateMessage,pageX} from '../common/utils.js'
@@ -54,10 +54,9 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
     callback(null,res)
 }
 
-await mongooseConnection()
 const server = new grpc.Server();
 server.addService( UnimplementedBookServiceService.definition, {bookList})
-server.bindAsync( bookServiceIP , grpc.ServerCredentials.createInsecure(), 
+server.bindAsync( bookServiceURL , grpc.ServerCredentials.createInsecure(), 
 (err: Error | null, port: number) => {
     if (err) {
       console.error(`Server error: ${err.message}`);

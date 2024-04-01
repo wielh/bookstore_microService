@@ -17,6 +17,7 @@ message Base {
 message RegisterRequest {
     Base base = 1;
     string email = 2;
+    string name = 3;
 }
 
 message RegisterResponse {

@@ -1,0 +1,99 @@
+version: '3'
+
+services:
+  gate:
+    container_name: gate
+    build:
+      dockerfile: gate/Dockerfile
+    ports:
+      - "3000:3000"  
+    depends_on: 
+      - micro-mail
+      - micro-account
+      - micro-book
+      - micro-transection
+    networks:
+      network1:
+        ipv4_address: 172.22.0.2
+    extra_hosts: 
+      - "host.docker.abc:192.168.0.14"
+
+  micro-account:
+    container_name: micro-account
+    build:
+      dockerfile: micro-account/Dockerfile
+    ports:
+      - "9501:9501"  
+    depends_on: 
+      - micro-mail
+      - rabbitMQ
+    networks:
+      network1:
+        ipv4_address: 172.22.0.3
+    extra_hosts:
+      - "host.docker.abc:192.168.0.14"
+
+  micro-book:
+    container_name: micro-book
+    build:
+      dockerfile: micro-book/Dockerfile
+    ports:
+      - "9502:9502"  
+    depends_on: 
+      - rabbitMQ
+    networks:
+      network1:
+        ipv4_address: 172.22.0.4
+    extra_hosts: 
+      - "host.docker.abc:192.168.0.14"
+
+  micro-transection:
+    container_name: micro-transection
+    build:
+      dockerfile: micro-transection/Dockerfile
+    ports:
+      - "9503:9503"  
+    depends_on: 
+      - rabbitMQ
+    networks:
+      network1:
+        ipv4_address: 172.22.0.5
+    extra_hosts:  
+      - "host.docker.abc:192.168.0.14"
+
+  micro-mail:
+    container_name: micro-mail
+    build:
+      dockerfile: micro-mail/Dockerfile
+    ports:
+      - "9504:9504"  
+    depends_on: 
+      - rabbitMQ
+    networks:
+      network1:
+        ipv4_address: 172.22.0.7
+ 
+  rabbitMQ:
+    container_name: rabbitMQ
+    image: "rabbitmq:management"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      network1:
+        ipv4_address: 172.22.0.6 
+    build:
+      args:
+        RABBITMQ_DEFAULT_USER: "root"
+        RABBITMQ_DEFAULT_PASS: "1234"
+
+networks:
+  network1:
+    name : bookstore_network_compose
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+
+

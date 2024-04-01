@@ -60,7 +60,9 @@ const IncomeMonthlySchema = new Schema({
 export var IncomeMonthlyModel = model<IncomeMonthlyDocument>('income_monthly', IncomeMonthlySchema, 'income_monthly')
 
 export async function updateBalance(timeStamp: number, gold: number, session:ClientSession): Promise<boolean>{
-   let r = await IncomeMonthlyModel.updateOne({timeStamp: getCurrentMonthFirstDayTimestamp(timeStamp)},{$inc:{ balance: gold }}, {session:session,  upsert: true})
+   let monthlyTimeStamp = getCurrentMonthFirstDayTimestamp(timeStamp)
   
-   return r.modifiedCount > 0
+   let r = await IncomeMonthlyModel.updateOne({timeStamp: monthlyTimeStamp},
+        { $set:{timeStamp:monthlyTimeStamp}, $inc:{ balance: gold }}, {session:session , upsert:true})
+   return (r.modifiedCount > 0 || r.upsertedCount > 0)
 }

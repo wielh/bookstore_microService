@@ -7,7 +7,6 @@ const mongo_db_client = new MongoClient(mongo_db_str, { monitorCommands: true ,m
 
 const DB = mongo_db_client.db(db_name)
 try {
-  await DB.command({createUser: db_user, pwd: "test", roles: []})
   await DB.createCollection("user")
   await DB.createCollection("activity")
   await DB.createCollection("book")
@@ -17,8 +16,8 @@ try {
   console.log(error)
 }
 
-
 try {
+  await DB.command({createUser: db_user, pwd: "test", roles: []})
   await DB.command({
     createRole: role_name,
     privileges:[
@@ -55,12 +54,14 @@ try {
       {
           "accountType": 0,
           "username": "abcdef",
+          "name": "abcdef",
           "password": "dfc49ac76f4bd607c4b1b37de08179a50dc7525c71fa01d261e3b3c3d57351f470187eb21c577e8db6ecaa8198c33866f0f8c1de74550a52120fcf4047e45849",
           "emailVerified": 1,
           "email": "wielh.test@gmail.com",
           "balance": 13740
       },{
           "accountType": 1,
+          "name": "柏翔",
           "googleID": "112145293540659714263",
           "username": "bob",
           "email": "wielh.test@gmail.com",
@@ -70,7 +71,6 @@ try {
   ])
   await DB.collection("user").createIndex({username:1},{unique:true})
   await DB.collection("user").createIndex({googleID:1},{unique:true})
-
   await DB.collection("book").insertMany([
       {
           "price": 150,

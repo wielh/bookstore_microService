@@ -52,9 +52,9 @@ export async function normalUserExistWithPwd(username:string, password:string): 
     return !(doc==null)
 }
 
-export async function insertNormalUser(username:string, password:string, email:string): Promise<void> {
+export async function insertNormalUser(username:string, password:string, email:string, name:string): Promise<void> {
     await NormalUserModel.create({
-        username:username, password: password, email: email, accountType:accountType.normal, balance:0, emailVerified: 0 })
+        username:username, password: password, email: email, name:name, accountType:accountType.normal, balance:0, emailVerified: 0 })
 }
 
 export async function resetPassword(username:string, password:string, newPassword:string): Promise<boolean> {
