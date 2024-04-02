@@ -63,13 +63,13 @@ const localhostSetting = {
 }
 
 const dockerSetting = {
-    gateIP : "172.22.0.2",
-    accountServiceIP : "172.22.0.3",
-    bookServiceIP : "172.22.0.4",
-    transectionServiceIP : "172.22.0.5",
-    rabbitMQIP : "172.22.0.6",
-    mongodbIP : `host.docker.abc`,     //localhost IP
-    mailIP : "172.22.0.7",
+    gateIP : "gate-container",
+    accountServiceIP : "micro-account-container",
+    bookServiceIP : "micro-book-container",
+    transectionServiceIP : "micro-transection-container",
+    rabbitMQIP : "rabbitMQ-container-0",
+    mongodbIP : `host.docker.abc`,    
+    mailIP : "micro-mail-container",
 }
 
 export enum channelName { getVerificationCode = "getVerificationCode"}
