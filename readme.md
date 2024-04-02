@@ -20,7 +20,7 @@
 方法在 [ReplicaSet 設定](https://aspnetmars.blogspot.com/2019/04/windows-mongodb-replica-set-sharding.html).
  * 要啟用 googleLogin 功能，記得要去更改 googleVerifyID 與 googleVerifyPassword，
  關於申請 googleVerifyID 方法，參見 [GoogleAPI申請](https://blog.hungwin.com.tw/aspnet-google-login/)
- * 要使用 grpc 通信，需要安裝  protobuf-compiler, protoc-gen-ts，安裝完成後使用以下指令編譯 proto 檔案
+ * 要使用 grpc 在微服務之間通信，需要安裝  protobuf-compiler, protoc-gen-ts，安裝完成後使用以下指令編譯 proto 檔案
 
 ```
   protoc -I="." --ts_out="."  .\proto\account.proto
