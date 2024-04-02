@@ -6,3 +6,4 @@ note.txt
 .gitignore
 *.js
 !mongo-script.js
+docker-compose.yaml

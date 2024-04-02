@@ -82,10 +82,6 @@ services:
     networks:
       network1:
         ipv4_address: 172.22.0.6 
-    build:
-      args:
-        RABBITMQ_DEFAULT_USER: "root"
-        RABBITMQ_DEFAULT_PASS: "1234"
 
 networks:
   network1:
