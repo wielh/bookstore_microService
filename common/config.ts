@@ -20,7 +20,7 @@ export const tokenKey:string = "abcdefghijklmnopqrstuvwxyz"
 export const tokenExpireSecond: number = 24*60*60
 
 export enum accountType {normal=0,google=1}
-export enum Port { gate = 3000, microAccount = 9501, microBook=9502, microTransection = 9503, microMail = 9504, mongo = 27017, rabbitMQ = 5672}
+export enum Port { gate = 3000, microAccount = 9501, microBook=9502, microTransection = 9503, microMail = 9504, mongo = 27017, rabbitMQ = 5672, sendMail = 465}
 
 function getURL(IP:string, Port:number):string{
     return `${IP}:${Port}`
@@ -34,6 +34,7 @@ class IPSetting {
     rabbitMQIP: string
     mongodbIP: string
     mailIP: string
+    mailHost: string
 }
 
 export let currentIPSetting: IPSetting
@@ -59,7 +60,8 @@ const localhostSetting = {
     transectionServiceIP : "127.0.0.1",
     rabbitMQIP : "localhost",
     mongodbIP : `127.0.0.1`,
-    mailIP : "127.0.0.1"
+    mailIP : "127.0.0.1",
+    mailHost : "127.0.0.1"
 }
 
 const dockerSetting = {
@@ -70,11 +72,12 @@ const dockerSetting = {
     rabbitMQIP : "rabbitMQ-container-0",
     mongodbIP : `host.docker.abc`,    
     mailIP : "micro-mail-container",
+    mailHost : `host.docker.abc`,  
 }
 
 export enum channelName { getVerificationCode = "getVerificationCode"}
 export const googleVerifyID = "118619557524-ej7k7ceopnn8glgi9foksta3t72vnca3.apps.googleusercontent.com"
-export const googleVerifyPassword = "*****"
+export const googleVerifyPassword = "***"
 export const websiteEmail = 'wielh.erlow@gmail.com'
 export let googleVerificationUrl = ""
 export let oauth2Client:OAuth2Client
@@ -145,7 +148,7 @@ async function URLInit() {
 export const transporter = createTransport(
     {  
         service: 'gmail',
-        port: 465,
+        port: Port.sendMail,
         secure: true,
         auth: {
             user: websiteEmail,
