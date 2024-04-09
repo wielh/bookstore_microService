@@ -1,8 +1,8 @@
-# bookstore API 介紹
+# Bookstore API 介紹
 
 ## 1. 這是一個怎麼樣的程式
 
-  使用 typescript 與 node.js 做的 API, 有以下的功能 :
+  使用 typescript 與 node.js 做的範例 API, 有以下的功能 :
 
  * 支援 google 登入
  * 可以寄信給使用者
