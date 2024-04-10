@@ -1,87 +1,79 @@
 version: '3'
 
 services:
-  gate:
-    container_name: gate
+  gate-service:
+    container_name: gate-service
     build:
       dockerfile: gate/Dockerfile
     ports:
       - "3000:3000"  
     depends_on: 
-      - micro-mail
-      - micro-account
-      - micro-book
-      - micro-transection
-    networks:
-      network1:
-        ipv4_address: 172.22.0.2
+      - micro-mail-service
+      - micro-account-service
+      - micro-book-service
+      - micro-transection-service
     extra_hosts: 
-      - "host.docker.abc:192.168.0.14"
+      - "host.docker.abc:192.168.0.13"
+    command: node app.js 2
 
-  micro-account:
-    container_name: micro-account
+  micro-account-service:
+    container_name: micro-account-service
     build:
       dockerfile: micro-account/Dockerfile
     ports:
       - "9501:9501"  
     depends_on: 
-      - micro-mail
-      - rabbitMQ
-    networks:
-      network1:
-        ipv4_address: 172.22.0.3
+      - micro-mail-service
+      - rabbitMQ-service-0
     extra_hosts:
-      - "host.docker.abc:192.168.0.14"
+      - "host.docker.abc:192.168.0.13"
+    command: node main.js 2
 
-  micro-book:
-    container_name: micro-book
+  micro-book-service:
+    container_name: micro-book-service
     build:
       dockerfile: micro-book/Dockerfile
     ports:
       - "9502:9502"  
     depends_on: 
-      - rabbitMQ
-    networks:
-      network1:
-        ipv4_address: 172.22.0.4
+      - rabbitMQ-service-0
     extra_hosts: 
-      - "host.docker.abc:192.168.0.14"
+      - "host.docker.abc:192.168.0.13"
+    command: node main.js 2
 
-  micro-transection:
-    container_name: micro-transection
+  micro-transection-service:
+    container_name: micro-transection-service
     build:
       dockerfile: micro-transection/Dockerfile
     ports:
       - "9503:9503"  
     depends_on: 
-      - rabbitMQ
-    networks:
-      network1:
-        ipv4_address: 172.22.0.5
+      - rabbitMQ-service-0
     extra_hosts:  
-      - "host.docker.abc:192.168.0.14"
+      - "host.docker.abc:192.168.0.13"
+    command: node main.js 2
 
-  micro-mail:
-    container_name: micro-mail
+  micro-mail-service:
+    container_name: micro-mail-service
     build:
       dockerfile: micro-mail/Dockerfile
     ports:
       - "9504:9504"  
     depends_on: 
-      - rabbitMQ
-    networks:
-      network1:
-        ipv4_address: 172.22.0.7
- 
-  rabbitMQ:
-    container_name: rabbitMQ
+      - rabbitMQ-service-0
+    extra_hosts: 
+      - "host.docker.abc:192.168.0.13"
+    command: node main.js 2
+
+  rabbitMQ-service-0:
+    container_name: rabbitMQ-service-0
     image: "rabbitmq:management"
+    environment:
+      RABBITMQ_DEFAULT_USER: "root"
+      RABBITMQ_DEFAULT_PASS: "1234"
     ports:
       - "5672:5672"
       - "15672:15672"
-    networks:
-      network1:
-        ipv4_address: 172.22.0.6 
 
 networks:
   network1:
@@ -89,7 +81,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.22.0.0/16
-          gateway: 172.22.0.1
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1
 
 

@@ -75,6 +75,17 @@ const dockerSetting = {
     mailHost : `host.docker.abc`,  
 }
 
+const dockerComposeSetting = {
+    gateIP : "gate-service",
+    accountServiceIP : "micro-account-service",
+    bookServiceIP : "micro-book-service",
+    transectionServiceIP : "micro-transection-service",
+    rabbitMQIP : "rabbitMQ-service-0",
+    mongodbIP : `host.docker.abc`,    
+    mailIP : "micro-mail-service",
+    mailHost : `host.docker.abc`,  
+}
+
 export enum channelName { getVerificationCode = "getVerificationCode"}
 export const googleVerifyID = "118619557524-ej7k7ceopnn8glgi9foksta3t72vnca3.apps.googleusercontent.com"
 export const googleVerifyPassword = "***"
@@ -94,6 +105,9 @@ function getIPSetting() {
         switch(type) {
             case 1:
                 currentIPSetting = dockerSetting
+                break
+            case 2:
+                currentIPSetting = dockerComposeSetting
                 break
             default:
                 currentIPSetting = localhostSetting

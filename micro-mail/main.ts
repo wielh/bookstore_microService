@@ -1,11 +1,11 @@
 
 
-import {rabbitMQConnection, channelName, transporter ,websiteEmail} from '../common/config.js' 
+import {rabbitMQConnection, channelName, transporter ,websiteEmail, logger} from '../common/config.js' 
 
 
 export async function sendMailImplementation(emailAddress:string, subject:string, message:string): Promise<boolean>{
     try {
-        let x = await transporter.sendMail(
+        await transporter.sendMail(
             {
                 from: websiteEmail,
                 to: emailAddress,
@@ -24,16 +24,16 @@ function sendEmail(channelName:string) {
     try {
         channel.consume(channelName,
             async (msg) => {
+                logger.info("A new email message", msg)
                 if (msg !== null) {
                     const emailMessage = JSON.parse(msg.content.toString())
-                    console.log(emailMessage)
                     const {emailAddress, subject, message} = emailMessage
                     await sendMailImplementation(emailAddress, subject, message)
                 }
             }, options
         );
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }
 
