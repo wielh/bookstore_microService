@@ -91,7 +91,7 @@ async function calculatePriceType1(req:TransectionRequest ,answer:Answer): Promi
             discount = level.discount 
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "Activity config error", activity))
+        logger.error(generateMessage("", functionName, "Activity config error", activity),error)
         answer.errCode = errMongo
         return answer
     }
@@ -121,7 +121,7 @@ async function calculatePriceType2(req:TransectionRequest, answer:Answer): Promi
             discount = level.discount 
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "Activity config error", activity))
+        logger.error(generateMessage("", functionName, "Activity config error", activity),error)
         answer.errCode = errMongo
         return answer
     }
@@ -174,7 +174,7 @@ async function calculatePriceType3(req:TransectionRequest, answer:Answer): Promi
          }
        }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "Activity config error", activity))
+        logger.error(generateMessage("", functionName, "Activity config error", activity),error)
         answer.errCode = errMongo
         return answer
     }
@@ -217,7 +217,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
             return
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "A mongoErr happens while searching user", call.request))
+        logger.error(generateMessage("", functionName, "A mongoErr happens while searching user", call.request),error)
         res.errCode = errMongo
         callback(error,res)
         return
@@ -264,7 +264,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
         }
         await session.commitTransaction()
     } catch (error) {
-        logger.error(generateMessage(req.username, functionName, "A mongoErr happens while searching user", call.request))
+        logger.error(generateMessage(req.username, functionName, "A mongoErr happens while searching user", call.request),error)
         await session.abortTransaction()
         res.errCode = errMongo
         callback(error,res)
@@ -286,7 +286,7 @@ export async function transectionRecord(call: ServerUnaryCall<TransectionRecordR
     try {
         count = await transectionDB.countLog(req.username ,req.accountType)
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while counting transection log", call.request))
+        logger.error(generateMessage("", functionName, "mongoErr happens while counting transection log", call.request),error)
         res.errCode = errMongo
         callback(error,res)
     }
@@ -340,7 +340,7 @@ export async function transectionRecord(call: ServerUnaryCall<TransectionRecordR
             records.push(record)
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching transection log", call.request))
+        logger.error(generateMessage("", functionName, "mongoErr happens while searching transection log", call.request),error)
         res.errCode = errMongo
         callback(error,res)
     }

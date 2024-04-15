@@ -38,7 +38,7 @@ export async function activityList(call: grpc.ServerUnaryCall<ActivityRequest,Ac
             res.data.push(activityRes)
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching activity", req))
+        logger.error(generateMessage("", functionName, "mongoErr happens while searching activity", req),error)
         res.errCode = errMongo
         callback(error,res)
     }

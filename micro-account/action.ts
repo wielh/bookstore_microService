@@ -31,7 +31,7 @@ export async function register(call: grpc.ServerUnaryCall<RegisterRequest, Regis
             return
         }
     } catch (error) {
-        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request))
+        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request),error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -40,7 +40,7 @@ export async function register(call: grpc.ServerUnaryCall<RegisterRequest, Regis
     try {
         await userDB.insertNormalUser(req.base.username, req.base.password, req.email , req.name)
     } catch (error) {
-        logger.error(generateMessage(req .base.username, functionName, "mongoErr happens while insert new data to collection user", req))
+        logger.error(generateMessage(req .base.username, functionName, "mongoErr happens while insert new data to collection user", req), error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -63,7 +63,7 @@ export async function resendRegisterVerifyEmail(call: grpc.ServerUnaryCall<Resen
             return
         }
     } catch (error) {
-        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request))
+        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request),error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -85,7 +85,7 @@ export async function registerVerify(call: grpc.ServerUnaryCall<RegisterVerifyRe
             return
         }
     } catch (error) {
-        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request))
+        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request),error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -101,7 +101,7 @@ export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest
     try {
         exist = await userDB.googleUserExist(req.googleID)
     } catch (error) {
-        logger.error(generateMessage(req.googleID.toString(), functionName, "mongoErr happens while searching user", call.request))
+        logger.error(generateMessage(req.googleID.toString(), functionName, "mongoErr happens while searching user", call.request),error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -111,7 +111,7 @@ export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest
         try {  
             await userDB.insertGoogleUser(req.googleID,req.googleName,req.googleEmail)
         } catch (error) {
-            logger.error(generateMessage(req.googleID.toString(), functionName, "mongoErr happens while insert new user", req))
+            logger.error(generateMessage(req.googleID.toString(), functionName, "mongoErr happens while insert new user", req),error)
             res.errcode = errMongo
             callback(error,res)
             return
@@ -157,7 +157,7 @@ export async function resetPassword(call: grpc.ServerUnaryCall<ResetPasswordRequ
             return
         }
     } catch (error) {
-        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request))
+        logger.error(generateMessage(req.base.username, functionName, "mongoErr happens while searching user", call.request),error)
         res.errcode = errMongo
         callback(error,res)
         return
