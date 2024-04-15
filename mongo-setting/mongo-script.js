@@ -69,8 +69,8 @@ try {
           "emailVerified": 1
       }
   ])
-  await DB.collection("user").createIndex({username:1},{unique:true})
-  await DB.collection("user").createIndex({googleID:1},{unique:true})
+  await DB.collection("user").createIndex({username:1},{unique:true,partialFilterExpression :{ username: { $type: "string"  }}})
+  await DB.collection("user").createIndex({googleID:1},{unique:true,partialFilterExpression :{ googleID: { $type: "string" }}})
   await DB.collection("book").insertMany([
       {
           "price": 150,
