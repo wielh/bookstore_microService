@@ -18,10 +18,11 @@ export function registerServiceTransection(): Router{
 class ActivityList{
     errcode : number 
     data : {
+        activityID:string
         activityType:number
         startDate:number
         endDate:number
-        activityInfo:JSON
+        activityInfo: string
     }[]
     
     constructor(response: transectionProto.ActivityReponse) {
@@ -29,19 +30,21 @@ class ActivityList{
        this.data = []
        for (let data of response.data) {
           try {
+            console.log(data)
             this.data.push({
+                activityID: data.activityID,
                 activityType: data.activityType,
                 startDate: data.startDate,
                 endDate: data.endDate,
-                activityInfo: JSON.parse(data.activityInfo)
-             })
+                activityInfo: data.activityInfo
+            })
           } catch (error) {}
        }
     }
 }
 
 async function activityList(req:Request, res:Response):Promise<void> {
-    let grpcReq = new   transectionProto.ActivityRequest()
+    let grpcReq = new  transectionProto.ActivityRequest()
     transectionServiceClient.activityList(grpcReq,(err, response) => {
         if (err || !response) {
             res.status(500).json({errCode: errMicroServiceNotResponse});

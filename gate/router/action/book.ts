@@ -67,8 +67,8 @@ async function listBook(req:Request, res:Response):Promise<void> {
     const {page, pageSize, bookName, tags, priceUpperbound, priceLowerbound} = req.body;
 
     let grpcReq = new BookListRequest()
-    grpcReq.page = page
-    grpcReq.pageSize = pageSize
+    grpcReq.page = Math.floor(page)
+    grpcReq.pageSize = Math.floor(pageSize)
     grpcReq.bookName = bookNameOK? bookName: ""
     grpcReq.tags = tagsOK ? tags: []
     grpcReq.priceUpperbound = priceUpperboundOK? priceUpperbound:0

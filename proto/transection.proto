@@ -14,10 +14,11 @@ message ActivityReponse {
 }
 
 message ActivityReponseData {
-    int32 activityType = 1;
-    int64 startDate = 2;
-    int64 endDate = 3;
-    string activityInfo = 4;
+    string activityID = 1;
+    int32 activityType = 2;
+    int64 startDate = 3;
+    int64 endDate = 4;
+    string activityInfo = 5;
 }
 
 message TransectionRequest {

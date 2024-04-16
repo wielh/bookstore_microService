@@ -18,6 +18,7 @@ export async function activityList(call: grpc.ServerUnaryCall<ActivityRequest,Ac
         let activitys = await activityDB.findActivities(now)
         for (let activity of activitys) {
             let activityRes = new ActivityReponseData()
+            activityRes.activityID = activity._id.toString()
             activityRes.activityType = activity.type
             activityRes.startDate = activity.startDate
             activityRes.endDate = activity.endDate
@@ -34,7 +35,6 @@ export async function activityList(call: grpc.ServerUnaryCall<ActivityRequest,Ac
                 default:
                     activityRes.activityInfo = ""
             }
-            
             res.data.push(activityRes)
         }
     } catch (error) {
