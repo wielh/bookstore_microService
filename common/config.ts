@@ -38,7 +38,7 @@ class IPSetting {
 }
 
 export let currentIPSetting: IPSetting
-export let gateURL:string = ""
+export let gateDefaultURL:string = ""
 export let accountServiceURL = ""
 export let accountServiceClient:AccountServiceClient
 export let bookServiceURL = ""
@@ -123,8 +123,8 @@ async function URLInit() {
     getIPSetting()
     let c = currentIPSetting
 
-    gateURL = getURL(c.gateIP, Port.gate)
-    googleCallbackUrl = `http://${gateURL}/account/google_callback`
+    gateDefaultURL = getURL(localhostSetting.gateIP, Port.gate)
+    googleCallbackUrl = `http://${gateDefaultURL}/account/google_callback`
     oauth2Client = new google.auth.OAuth2(googleVerifyID,googleVerifyPassword,googleCallbackUrl)
     googleVerificationUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
