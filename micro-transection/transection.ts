@@ -46,8 +46,13 @@ class Answer {
 async function normalCalculatePrice(req:TransectionRequest, answer:Answer): Promise<Answer> {
     let booksInfo: BookInf[] = []
     let totalPrice: number = 0
-    let bookIdSet : Set<number> = new Set();
+    let bookIdSet : Set<string> = new Set();
+
     for (let book of req.bookInfo) {
+        if (bookIdSet.has(book.bookId)) {
+            return null
+        }
+        bookIdSet.add(book.bookId)
 
         let bookRes = new BookInf()
         let bookMongo = await bookDB.getBookById(book.bookId)
@@ -77,7 +82,7 @@ async function calculatePriceType1(req:TransectionRequest ,answer:Answer): Promi
     answer = await normalCalculatePrice(req, answer) 
     let activity = await activityDB.findActivityType1ById(req.activityID, answer.transectionTime)
     if (activity == null) {
-        return answer
+        return null
     }
 
     let discount = 1
@@ -107,7 +112,7 @@ async function calculatePriceType2(req:TransectionRequest, answer:Answer): Promi
     answer = await normalCalculatePrice(req,answer) 
     let activity = await activityDB.findActivityType2ById(req.activityID, answer.transectionTime)
     if (activity == null) {
-        return answer
+        return null
     } 
 
     let discount = 0
@@ -137,7 +142,7 @@ async function calculatePriceType3(req:TransectionRequest, answer:Answer): Promi
     answer = await normalCalculatePrice(req,answer) 
     let activity = await activityDB.findActivityType3ById(req.activityID, answer.transectionTime)
     if (activity == null) {
-        return answer
+        return null
     } 
 
     let totalDiscount = 0
@@ -222,7 +227,11 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     }
     // 1. 算錢
     let answer = await calculatePrice(req)
-    if (answer.errCode != errSuccess) {
+    if (answer == null) {
+        logger.warn(generateMessage(req.username, functionName, "Format of request is incorrect", call.request))
+        callback(null,res)
+        return
+    } else if (answer.errCode != errSuccess) {
         callback(null,res)
         return
     }
