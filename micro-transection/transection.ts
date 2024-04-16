@@ -49,8 +49,6 @@ async function normalCalculatePrice(req:TransectionRequest, answer:Answer): Prom
     let bookIdSet : Set<number> = new Set();
     for (let book of req.bookInfo) {
 
-        
-
         let bookRes = new BookInf()
         let bookMongo = await bookDB.getBookById(book.bookId)
         if (bookMongo == null) {

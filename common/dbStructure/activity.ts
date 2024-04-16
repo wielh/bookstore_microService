@@ -42,8 +42,12 @@ export async function findActivities(timeStamp:number){
 }
 
 export async function findActivityType1ById(Id: string, timeStamp:number):Promise<ActivityDocument>{
-    let activity = await activityModel.findOne({ _id: new Types.ObjectId(Id), type:1, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
-    return activity
+    try {
+        let activity = await activityModel.findOne({ _id: new Types.ObjectId(Id), type:1, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
+        return activity
+    } catch (error) {
+        return null
+    }
 }
 
 export async function findActivityType2ById(Id: string, timeStamp:number):Promise<ActivityDocument>{
@@ -52,12 +56,21 @@ export async function findActivityType2ById(Id: string, timeStamp:number):Promis
 }
 
 export async function findActivityType3ById(Id: string, timeStamp:number):Promise<ActivityDocument>{
-    let activity = await activityModel.findOne({ _id: new Types.ObjectId(Id), type:3, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
-    return activity
+    try {
+        let activity = await activityModel.findOne({ _id: new Types.ObjectId(Id), type:3, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
+        return activity
+    } catch (error) {
+        return null
+    }
 }
 
 export async function findActivityById(id:string, activityType:number):Promise<ActivityDocument> {
-    return await activityModel.findOne({ _id: new Types.ObjectId(id), type:activityType})
+    try {
+        return await activityModel.findOne({ _id: new Types.ObjectId(id), type:activityType})
+    } catch (error) {
+        return null
+    }
+   
 }
 
 
