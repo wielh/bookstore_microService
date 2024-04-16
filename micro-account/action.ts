@@ -2,7 +2,7 @@ import * as grpc from "@grpc/grpc-js";
 import { GooogleLoginRequest, GooogleLoginResponse, LoginRequest, LoginResponse, 
     RegisterRequest, RegisterResponse, ResetPasswordRequest, ResetPasswordResponse, ResendRegisterVerifyEmailRequest,
     ResendRegisterVerifyEmailResponse,RegisterVerifyRequest,RegisterVerifyResponse} from "../proto/account.js";
-import { logger,tokenExpireSecond, gateURL, accountType, rabbitMQConnection} from '../common/config.js'
+import { logger,tokenExpireSecond, gateDefaultURL, accountType, rabbitMQConnection} from '../common/config.js'
 import {errSuccess, errMongo, errUserExist, errUserNotExist, errSendRegisterEmailFailed, errEmailVerifited} from '../common/errCode.js'
 import {generateMessage,createToken, sendMailProducer} from '../common/utils.js'
 import * as userDB from '../common/dbStructure/user.js'
@@ -11,7 +11,7 @@ export async function resendRegiterVerifyEmailImplementation(username:string, em
     let verificationCode = createToken({username:username, accountType:0 , email: email},60*60)
     const emailInfo =
         ` Hello, user ${username}, this is QueenStore bookstore.` +
-        ` Please enter the website: ${gateURL}/account/register_verify?token=${verificationCode} `+
+        ` Please enter the website: ${gateDefaultURL}/account/register_verify?token=${verificationCode} `+
         ` to complete email varification.`+
         ` If you are not a member. Please ignore this.`;
 

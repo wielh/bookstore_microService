@@ -149,8 +149,10 @@ async function URLInit() {
     } catch(error) {
         console.error('Error connecting to MongoDB with host:', error);
     } 
+}
 
-    const rabbitMQURL = getURL(c.rabbitMQIP, Port.rabbitMQ)
+export async function rabbitMQconnect() {
+    const rabbitMQURL = getURL(currentIPSetting.rabbitMQIP, Port.rabbitMQ)
     const rabbitMQConenctionStr = `amqp://${rabbitMQUsername}:${rabbitMQPassword}@${rabbitMQURL}/`;
     try {
         rabbitMQConnection = await connect(rabbitMQConenctionStr);

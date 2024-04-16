@@ -1,6 +1,6 @@
 
 
-import {rabbitMQConnection, channelName, transporter ,websiteEmail, logger} from '../common/config.js' 
+import {rabbitMQconnect, rabbitMQConnection, channelName, transporter ,websiteEmail, logger} from '../common/config.js' 
 
 
 export async function sendMailImplementation(emailAddress:string, subject:string, message:string): Promise<boolean>{
@@ -42,6 +42,7 @@ function sendVerificationMail() {
 }
 
 console.log("Hello, this is micro-mail")
+await rabbitMQconnect()
 const channel = await rabbitMQConnection.createChannel()
 await channel.assertQueue(channelName.getVerificationCode, { durable: true});
 sendVerificationMail()

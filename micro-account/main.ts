@@ -1,8 +1,9 @@
 import * as grpc from "@grpc/grpc-js";
-import {accountServiceURL} from '../common/config.js'
+import {accountServiceURL,rabbitMQconnect} from '../common/config.js'
 import { UnimplementedAccountServiceService} from "../proto/account.js";
 import {register, googleLogin, login, resetPassword, resendRegisterVerifyEmail, registerVerify} from './action.js'
 
+await rabbitMQconnect()
 const server = new grpc.Server();
 server.addService(UnimplementedAccountServiceService.definition, 
     {register, googleLogin, login, resetPassword, resendRegisterVerifyEmail, registerVerify})
