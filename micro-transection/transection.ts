@@ -3,9 +3,9 @@ import {ServerUnaryCall, sendUnaryData} from "@grpc/grpc-js";
 import mongoose from 'mongoose'
 
 import {TransectionRequest, TransectionResponse, TransectionRecordRequest, TransectionRecordResponse, TransectionRecord, ActivityReponseData, BookInfo} from '../proto/transection.js'
-import { logger} from '../common/config.js'
+import { errorLogger, warnLogger, InfoLogger} from '../common/config.js'
 import { errMongo, errSuccess, errUserNotExist, errGoldNotEnought, errUpdateIncomeFailed, errBookNotEnought} from '../common/errCode.js'
-import { generateMessage, pageX} from '../common/utils.js'
+import { pageX} from '../common/utils.js'
 import * as bookDB from '../common/dbStructure/book.js'
 import * as userDB from '../common/dbStructure/user.js'
 import * as transectionDB from '../common/dbStructure/transection.js'
@@ -94,7 +94,7 @@ async function calculatePriceType1(req:TransectionRequest ,answer:Answer): Promi
             discount = level.discount 
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "Activity config error", activity),error)
+        errorLogger("", functionName, "Activity config error", activity,error)
         answer.errCode = errMongo
         return answer
     }
@@ -124,7 +124,7 @@ async function calculatePriceType2(req:TransectionRequest, answer:Answer): Promi
             discount = level.discount 
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "Activity config error", activity),error)
+        errorLogger("", functionName, "Activity config error", activity, error)
         answer.errCode = errMongo
         return answer
     }
@@ -177,7 +177,7 @@ async function calculatePriceType3(req:TransectionRequest, answer:Answer): Promi
          }
        }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "Activity config error", activity),error)
+        errorLogger("", functionName, "Activity config error", activity,error)
         answer.errCode = errMongo
         return answer
     }
@@ -209,7 +209,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     let res:TransectionResponse = new TransectionResponse()
     let functionName:string = "transection"
     let req = call.request
-    logger.info(generateMessage("", functionName, "A new transection request started", call.request))
+    InfoLogger(req.username, functionName, "A new transection request started", call.request)
 
     let userExist = false
     try {
@@ -220,7 +220,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
             return
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "A mongoErr happens while searching user", call.request),error)
+        errorLogger("", functionName, "A mongoErr happens while searching user", call.request, error)
         res.errCode = errMongo
         callback(error,res)
         return
@@ -228,7 +228,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     // 1. 算錢
     let answer = await calculatePrice(req)
     if (answer == null) {
-        logger.warn(generateMessage(req.username, functionName, "Format of request is incorrect", call.request))
+        errorLogger(req.username, functionName, "Format of request is incorrect", call.request, "")
         callback(null,res)
         return
     } else if (answer.errCode != errSuccess) {
@@ -245,7 +245,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
         success = await userDB.transection(req.username, req.userType, answer.totalPrice, session)
         if (!success) {
             res.errCode = errGoldNotEnought
-            logger.warn(generateMessage(req.username, functionName, "Gold not enought", call.request))
+            warnLogger(req.username, functionName, "Gold not enought", call.request, "")
             await session.abortTransaction()
             callback(null,res)
             return
@@ -254,7 +254,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
             success = await bookDB.takeBooks(book.bookId, book.bookNumber, session)
             if (!success) {
                 res.errCode = errBookNotEnought
-                logger.warn(generateMessage(req.username, functionName, "Book not enought", call.request))
+                warnLogger(req.username, functionName, "Book not enought", call.request, "")
                 await session.abortTransaction()
                 callback(null,res)
                 return
@@ -264,14 +264,14 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
         success = await transectionDB.updateBalance(answer.transectionTime, answer.totalPrice, session)
         if (!success) {
             res.errCode = errUpdateIncomeFailed
-            logger.error(generateMessage(req.username, functionName, "Update balance failed", call.request))
+            errorLogger(req.username, functionName, "Update balance failed", req, "")
             await session.abortTransaction()
             callback(null,res)
             return
         }
         await session.commitTransaction()
     } catch (error) {
-        logger.error(generateMessage(req.username, functionName, "A mongoErr happens while searching user", call.request),error)
+        errorLogger(req.username, functionName, "A mongoErr happens while searching user", req, error)
         await session.abortTransaction()
         res.errCode = errMongo
         callback(error,res)
@@ -281,7 +281,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     }
 
     res.errCode = errSuccess
-    logger.info(generateMessage("", functionName, "A new transection request end", [call.request, res]))
+    InfoLogger(req.username, functionName, "A new transection request end", [req, res])
     callback(null,res)
 }
 
@@ -293,7 +293,7 @@ export async function transectionRecord(call: ServerUnaryCall<TransectionRecordR
     try {
         count = await transectionDB.countLog(req.username ,req.accountType)
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while counting transection log", call.request),error)
+        errorLogger(req.username, functionName, "mongoErr happens while counting transection log", req, error)
         res.errCode = errMongo
         callback(error,res)
     }
@@ -347,7 +347,7 @@ export async function transectionRecord(call: ServerUnaryCall<TransectionRecordR
             records.push(record)
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching transection log", call.request),error)
+        errorLogger(req.username, functionName, "mongoErr happens while searching transection log", call.request,error)
         res.errCode = errMongo
         callback(error,res)
     }

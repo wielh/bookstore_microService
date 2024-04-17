@@ -1,12 +1,10 @@
 import {Request, Response, json, Router } from 'express';
 import passport from 'passport';
-import {accountServiceClient, googleVerifyID, googleVerifyPassword, googleCallbackUrl, logger, oauth2Client} from '../../../common/config.js'
-import {passwordHash, checkParameterFormat, generateMessage, decodeToken} from '../../../common/utils.js'
+import {accountServiceClient, googleVerifyID, googleVerifyPassword, googleCallbackUrl, warnLogger} from '../../../common/config.js'
+import {passwordHash, checkParameterFormat, decodeToken} from '../../../common/utils.js'
 import {errParameter,errMicroServiceNotResponse, errSuccess, errGoogleToken, errToken, errUsernameTooShort , errPasswordTooShort} from '../../../common/errCode.js'
 import * as a from '../../../proto/account.js'
 import { Profile, Strategy } from 'passport-google-oauth20';
-import {google} from 'googleapis'
-
 
 export function registerServiceAccount(): Router{
     let router = Router()
@@ -32,7 +30,7 @@ const googleVerifyStrategy = new Strategy({
     grpcReq.googleEmail = profile.emails? profile.emails[0].value:""
     accountServiceClient.googleLogin(grpcReq,(error, response) => {
         if (error || !response || response.errcode) {
-            logger.warn(generateMessage(grpcReq.googleName,"googleLogin","An googleLogin error happens", [error,response]))
+            warnLogger(grpcReq.googleName,"googleLogin","An googleLogin error happens",response,error)
             return cb(null,{});
         }
         return cb(null,{token: response.token});

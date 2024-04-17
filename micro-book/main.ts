@@ -1,8 +1,8 @@
 import * as grpc from "@grpc/grpc-js";
-import { logger, bookServiceURL} from '../common/config.js'
+import {bookServiceURL, errorLogger} from '../common/config.js'
 import {Book, BookListRequest, BookListResponse,UnimplementedBookServiceService, BookData} from "../proto/book.js";
 import {errMongo, errSuccess} from '../common/errCode.js'
-import {generateMessage,pageX} from '../common/utils.js'
+import {pageX} from '../common/utils.js'
 import * as bookDB from '../common/dbStructure/book.js'
 
 async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResponse>, callback: grpc.sendUnaryData<BookListResponse>){
@@ -14,7 +14,7 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
     try {
         bookCount = await bookDB.count(req.bookName, req.tags, req.priceLowerbound, req.priceUpperbound)
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching book", JSON.stringify({"req": req})),error)
+        errorLogger("", functionName, "mongoErr happens while searching book", req, error)
         res.errcode = errMongo
         callback(null,res)
         return
@@ -38,7 +38,7 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
             books.push(book)
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching book",  JSON.stringify({"req": req})),error)
+        errorLogger("", functionName, "mongoErr happens while searching book", req, error)
         res.errcode = errMongo
         callback(null,res)
         return

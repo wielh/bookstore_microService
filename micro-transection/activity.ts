@@ -1,7 +1,6 @@
 import {ActivityRequest,ActivityReponse, ActivityReponseData} from '../proto/transection.js'
 import * as grpc from "@grpc/grpc-js";
-import {  logger} from '../common/config.js'
-import { generateMessage} from '../common/utils.js'
+import { errorLogger} from '../common/config.js'
 import { errMongo, errSuccess} from '../common/errCode.js'
 import * as activityDB from '../common/dbStructure/activity.js'
 
@@ -38,7 +37,7 @@ export async function activityList(call: grpc.ServerUnaryCall<ActivityRequest,Ac
             res.data.push(activityRes)
         }
     } catch (error) {
-        logger.error(generateMessage("", functionName, "mongoErr happens while searching activity", req),error)
+        errorLogger("", functionName, "mongoErr happens while searching activity", req,error)
         res.errCode = errMongo
         callback(error,res)
     }

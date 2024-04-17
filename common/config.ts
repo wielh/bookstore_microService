@@ -1,20 +1,19 @@
 import {AccountServiceClient} from '../proto/account.js'
 import {BookServiceClient} from '../proto/book.js'
 import {TransectionServiceClient} from '../proto/transection.js'
-import  {createLogger,transports,format} from 'winston'
+import {getCurrentDatetime} from './utils.js'
+
+import  {createLogger,Logger, transports,format} from 'winston'
 import {credentials} from '@grpc/grpc-js'
 import {connect, Connection} from 'amqplib'
 import {createTransport} from 'nodemailer'
 import mongoose from 'mongoose'
 import {google}  from "googleapis";
 import { OAuth2Client } from 'google-auth-library';
+import { Client } from '@elastic/elasticsearch';
+import { Timestamp } from 'mongodb'
 
-export const logger = createLogger({
-    level: 'info',
-    format: format.json(),
-    transports: [new transports.Console()],
-});
-
+let logger: Logger
 export const hashSalt:string = "qwertasdfgzxcvb"
 export const tokenKey:string = "abcdefghijklmnopqrstuvwxyz"
 export const tokenExpireSecond: number = 24*60*60
@@ -34,7 +33,7 @@ class IPSetting {
     rabbitMQIP: string
     mongodbIP: string
     mailIP: string
-    mailHost: string
+    elasticIP: string
 }
 
 export let currentIPSetting: IPSetting
@@ -52,6 +51,12 @@ const mongoUsername = 'bookstore_user';
 const mongoPassword = 'test';
 export let googleCallbackUrl = ""
 export let rabbitMQConnection:Connection
+export let elasticClient: Client
+let elasticIndex = ""
+
+export function setElasticIndex(serviceName:string) {
+    elasticIndex = serviceName
+}
 
 const localhostSetting = {
     gateIP : "127.0.0.1",
@@ -61,7 +66,7 @@ const localhostSetting = {
     rabbitMQIP : "localhost",
     mongodbIP : `127.0.0.1`,
     mailIP : "127.0.0.1",
-    mailHost : "127.0.0.1"
+    elasticIP : "127.0.0.1"
 }
 
 const dockerSetting = {
@@ -72,7 +77,7 @@ const dockerSetting = {
     rabbitMQIP : "rabbitMQ-container-0",
     mongodbIP : `host.docker.abc`,    
     mailIP : "micro-mail-container",
-    mailHost : `host.docker.abc`,  
+    elasticIP : `elastic-container`,  
 }
 
 const dockerComposeSetting = {
@@ -83,7 +88,7 @@ const dockerComposeSetting = {
     rabbitMQIP : "rabbitMQ-service-0",
     mongodbIP : `host.docker.abc`,    
     mailIP : "micro-mail-service",
-    mailHost : `host.docker.abc`,  
+    elasticIP : `elastic-service`,  
 }
 
 export enum channelName { getVerificationCode = "getVerificationCode"}
@@ -149,6 +154,13 @@ async function URLInit() {
     } catch(error) {
         console.error('Error connecting to MongoDB with host:', error);
     } 
+
+    elasticClient = new Client({ node: c.elasticIP, maxRetries:3});
+    logger = createLogger({
+        level: 'info',
+        format: format.json(),
+        transports: [new transports.Console()],
+    });
 }
 
 export async function rabbitMQconnect() {
@@ -175,5 +187,44 @@ export const transporter = createTransport(
         }
     }
 );
+
+function generateMessage(username:string, functionName: string, message:string, data:any):string {
+    return `[${functionName}][${username}][${getCurrentDatetime()}]:${message},data=|| ${data} ||`
+}
+
+export function errorLogger(username:string, functionName:string, message:string, data:any, error:any):void {
+    logger.error(generateMessage(username, functionName, message, data), error)
+    elasticClient.index({index:elasticIndex,body: {
+        functionName: functionName, 
+        message: message,
+        data: data,
+        level : "error", 
+        error: error,
+        datetime: new Date()
+    }});
+}
+
+export function warnLogger(username:string, functionName:string, message:string, data:any, error:any):void {
+    logger.warn(generateMessage(username, functionName, message, data), error)
+    elasticClient.index({index:elasticIndex,body: {
+        functionName: functionName, 
+        message: message,
+        data: data,
+        level : "warn", 
+        error: error,
+        datetime: new Date()
+    }});
+}
+
+export function InfoLogger(username:string, functionName:string, message:string, data:any):void {
+    logger.info(generateMessage(username, functionName, message, data))
+    elasticClient.index({index:elasticIndex,body: {
+        functionName: functionName, 
+        message: message,
+        data: data,
+        level : "Info", 
+        datetime: new Date()
+    }});
+}
 
 await URLInit()

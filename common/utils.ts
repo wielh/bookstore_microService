@@ -40,7 +40,7 @@ export function checkParameterFormat(object:any, key:string, typeof_value:string
     }
 }
 
-function getCurrentDatetime():string{
+export function getCurrentDatetime():string{
     var m = new Date();
     var dateString =
         m.getUTCFullYear() + "/" +
@@ -52,9 +52,7 @@ function getCurrentDatetime():string{
     return dateString;
 }
 
-export function generateMessage(username:string, functionName: string, message:string, data:any):string {
-    return `[${functionName}][${username}][${getCurrentDatetime()}]:${message},data=|| ${data} ||`
-}
+
 
 const { sign, verify } = jwt
 

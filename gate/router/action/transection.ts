@@ -1,8 +1,8 @@
 import {Request, Response, json, Router} from 'express';
 
 import {verifyToken} from './common.js'
-import {transectionServiceClient,logger} from '../../../common/config.js'
-import {checkParameterFormat, generateMessage} from '../../../common/utils.js'
+import {transectionServiceClient,warnLogger,InfoLogger} from '../../../common/config.js'
+import {checkParameterFormat} from '../../../common/utils.js'
 import {errParameter,errMicroServiceNotResponse} from '../../../common/errCode.js'
 import * as transectionProto from '../../../proto/transection.js'
 
@@ -114,12 +114,12 @@ async function transection(req:Request, res:Response):Promise<void> {
            grpcReq.bookInfo.push(book)
         }
     } catch (error) {
-        logger.warn(generateMessage(username as string, "transection", error, [req.body, req.query]))
+        warnLogger("","transection","An error happens while parsing data from json",[req.body, req.query], error )
         res.status(500).json({errCode: errParameter});
         return
     }
 
-    logger.info(generateMessage(username as string, "gate_transection", "A new transection request start", grpcReq))
+    InfoLogger(grpcReq.username,"transection","A new transection request start", grpcReq)
     transectionServiceClient.transection(grpcReq,(err, response) => {
             if (err || !response) {
                 console.log(err)
@@ -206,7 +206,7 @@ async function transectionRecord(req:Request, res:Response) {
         grpcReq.page = page
         grpcReq.pageSize = pageSize
     } catch (error) {
-        logger.warn(generateMessage(username as string, "transection", error, [req.body, req.query]))
+        warnLogger("", "transectionRecord", "An error happens while parsing data from json", [req.body, req.query], error)
         res.status(500).json({errCode: errParameter});
         return
     }

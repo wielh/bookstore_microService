@@ -1,6 +1,6 @@
 
 
-import {rabbitMQconnect, rabbitMQConnection, channelName, transporter ,websiteEmail, logger} from '../common/config.js' 
+import {rabbitMQconnect, rabbitMQConnection, channelName, transporter ,websiteEmail, InfoLogger, errorLogger} from '../common/config.js' 
 
 
 export async function sendMailImplementation(emailAddress:string, subject:string, message:string): Promise<boolean>{
@@ -21,10 +21,12 @@ export async function sendMailImplementation(emailAddress:string, subject:string
 
 const options = { noAck: true };
 function sendEmail(channelName:string) {
+    let message:any
     try {
         channel.consume(channelName,
             async (msg) => {
-                logger.info("A new email message", msg)
+                message = msg
+                InfoLogger("micro-mail-service", "sendEmail", "" , `${message}`);
                 if (msg !== null) {
                     const emailMessage = JSON.parse(msg.content.toString())
                     const {emailAddress, subject, message} = emailMessage
@@ -33,7 +35,7 @@ function sendEmail(channelName:string) {
             }, options
         );
     } catch (error) {
-        logger.error(error);
+        errorLogger("micro-mail-service", "sendEmail", "An error happens while consuming message from rabbitMQ" , `${message}` , error);
     }
 }
 
