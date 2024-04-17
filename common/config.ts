@@ -156,7 +156,7 @@ async function URLInit() {
         console.error('Error connecting to MongoDB with host:', error);
     } 
 
-    elasticClient = new Client({node: `${getURL(c.elasticIP,Port.elastic)}`, maxRetries:3});
+    elasticClient = new Client({node: `http://${getURL(c.elasticIP,Port.elastic)}`, maxRetries:3});
     logger = createLogger({
         level: 'info',
         format: format.json(),
