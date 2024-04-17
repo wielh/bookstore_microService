@@ -1,8 +1,9 @@
 import * as grpc from "@grpc/grpc-js";
-import {accountServiceURL,rabbitMQconnect} from '../common/config.js'
+import {accountServiceURL,rabbitMQconnect, errorLogger, infoLogger, setElasticIndex} from '../common/config.js'
 import { UnimplementedAccountServiceService} from "../proto/account.js";
 import {register, googleLogin, login, resetPassword, resendRegisterVerifyEmail, registerVerify} from './action.js'
 
+setElasticIndex("micro-account")
 await rabbitMQconnect()
 const server = new grpc.Server();
 server.addService(UnimplementedAccountServiceService.definition, 
@@ -10,9 +11,9 @@ server.addService(UnimplementedAccountServiceService.definition,
 server.bindAsync(accountServiceURL,grpc.ServerCredentials.createInsecure(),
   (err: Error | null, port: number) => {
     if (err) {
-      console.error(`Server error: ${err.message}`);
+      errorLogger("micro-account-service", "server.bindAsync", "error happens on micro-account start", "", err)
     } else {
-       console.log(`Server run on port: ${port}`)
+      infoLogger("micro-account-service", "server.bindAsync", `Server run on port: ${port}`, "")
     }
   }
 );

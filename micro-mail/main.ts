@@ -1,6 +1,6 @@
 
 
-import {rabbitMQconnect, rabbitMQConnection, channelName, transporter ,websiteEmail, InfoLogger, errorLogger} from '../common/config.js' 
+import {rabbitMQconnect, rabbitMQConnection, channelName, transporter ,websiteEmail, infoLogger, errorLogger, Port, setElasticIndex} from '../common/config.js' 
 
 
 export async function sendMailImplementation(emailAddress:string, subject:string, message:string): Promise<boolean>{
@@ -26,7 +26,7 @@ function sendEmail(channelName:string) {
         channel.consume(channelName,
             async (msg) => {
                 message = msg
-                InfoLogger("micro-mail-service", "sendEmail", "" , `${message}`);
+                infoLogger("micro-mail-service", "sendEmail", "" , `${message}`);
                 if (msg !== null) {
                     const emailMessage = JSON.parse(msg.content.toString())
                     const {emailAddress, subject, message} = emailMessage
@@ -43,7 +43,8 @@ function sendVerificationMail() {
     sendEmail(channelName.getVerificationCode)
 }
 
-console.log("Hello, this is micro-mail")
+setElasticIndex("micro-mail")
+infoLogger("micro-mail-service", "main", `Server run on port: ${Port.microMail}`, "")
 await rabbitMQconnect()
 const channel = await rabbitMQConnection.createChannel()
 await channel.assertQueue(channelName.getVerificationCode, { durable: true});

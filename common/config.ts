@@ -19,7 +19,8 @@ export const tokenKey:string = "abcdefghijklmnopqrstuvwxyz"
 export const tokenExpireSecond: number = 24*60*60
 
 export enum accountType {normal=0,google=1}
-export enum Port { gate = 3000, microAccount = 9501, microBook=9502, microTransection = 9503, microMail = 9504, mongo = 27017, rabbitMQ = 5672, sendMail = 465}
+export enum Port { gate = 3000, microAccount = 9501, microBook=9502, microTransection = 9503, microMail = 9504, 
+    mongo = 27017, rabbitMQ = 5672, sendMail = 465, elastic = 9200}
 
 function getURL(IP:string, Port:number):string{
     return `${IP}:${Port}`
@@ -155,7 +156,7 @@ async function URLInit() {
         console.error('Error connecting to MongoDB with host:', error);
     } 
 
-    elasticClient = new Client({ node: c.elasticIP, maxRetries:3});
+    elasticClient = new Client({node: `${getURL(c.elasticIP,Port.elastic)}`, maxRetries:3});
     logger = createLogger({
         level: 'info',
         format: format.json(),
@@ -216,7 +217,7 @@ export function warnLogger(username:string, functionName:string, message:string,
     }});
 }
 
-export function InfoLogger(username:string, functionName:string, message:string, data:any):void {
+export function infoLogger(username:string, functionName:string, message:string, data:any):void {
     logger.info(generateMessage(username, functionName, message, data))
     elasticClient.index({index:elasticIndex,body: {
         functionName: functionName, 

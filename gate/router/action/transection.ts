@@ -1,7 +1,7 @@
 import {Request, Response, json, Router} from 'express';
 
 import {verifyToken} from './common.js'
-import {transectionServiceClient,warnLogger,InfoLogger} from '../../../common/config.js'
+import {transectionServiceClient,warnLogger,infoLogger} from '../../../common/config.js'
 import {checkParameterFormat} from '../../../common/utils.js'
 import {errParameter,errMicroServiceNotResponse} from '../../../common/errCode.js'
 import * as transectionProto from '../../../proto/transection.js'
@@ -119,7 +119,7 @@ async function transection(req:Request, res:Response):Promise<void> {
         return
     }
 
-    InfoLogger(grpcReq.username,"transection","A new transection request start", grpcReq)
+    infoLogger(grpcReq.username,"transection","A new transection request start", grpcReq)
     transectionServiceClient.transection(grpcReq,(err, response) => {
             if (err || !response) {
                 console.log(err)

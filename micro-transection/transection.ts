@@ -3,7 +3,7 @@ import {ServerUnaryCall, sendUnaryData} from "@grpc/grpc-js";
 import mongoose from 'mongoose'
 
 import {TransectionRequest, TransectionResponse, TransectionRecordRequest, TransectionRecordResponse, TransectionRecord, ActivityReponseData, BookInfo} from '../proto/transection.js'
-import { errorLogger, warnLogger, InfoLogger} from '../common/config.js'
+import { errorLogger, warnLogger, infoLogger} from '../common/config.js'
 import { errMongo, errSuccess, errUserNotExist, errGoldNotEnought, errUpdateIncomeFailed, errBookNotEnought} from '../common/errCode.js'
 import { pageX} from '../common/utils.js'
 import * as bookDB from '../common/dbStructure/book.js'
@@ -209,7 +209,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     let res:TransectionResponse = new TransectionResponse()
     let functionName:string = "transection"
     let req = call.request
-    InfoLogger(req.username, functionName, "A new transection request started", call.request)
+    infoLogger(req.username, functionName, "A new transection request started", call.request)
 
     let userExist = false
     try {
@@ -281,7 +281,7 @@ export async function transection(call: ServerUnaryCall<TransectionRequest,Trans
     }
 
     res.errCode = errSuccess
-    InfoLogger(req.username, functionName, "A new transection request end", [req, res])
+    infoLogger(req.username, functionName, "A new transection request end", [req, res])
     callback(null,res)
 }
 

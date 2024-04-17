@@ -1,5 +1,5 @@
 import * as grpc from "@grpc/grpc-js";
-import {bookServiceURL, errorLogger} from '../common/config.js'
+import {bookServiceURL,  errorLogger, infoLogger, setElasticIndex} from '../common/config.js'
 import {Book, BookListRequest, BookListResponse,UnimplementedBookServiceService, BookData} from "../proto/book.js";
 import {errMongo, errSuccess} from '../common/errCode.js'
 import {pageX} from '../common/utils.js'
@@ -54,14 +54,15 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
     callback(null,res)
 }
 
+setElasticIndex("micro-book")
 const server = new grpc.Server();
 server.addService( UnimplementedBookServiceService.definition, {bookList})
 server.bindAsync( bookServiceURL , grpc.ServerCredentials.createInsecure(), 
 (err: Error | null, port: number) => {
     if (err) {
-      console.error(`Server error: ${err.message}`);
+        errorLogger("micro-book-service", "server.bindAsync", "error happens on micro-book start", "", err)
     } else {
-       console.log(`Server run on port: ${port}`)
+        infoLogger("micro-book-service", "server.bindAsync", `Server run on port: ${port}`, "")
     }
   }
 );
