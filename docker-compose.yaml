@@ -8,6 +8,7 @@ services:
     ports:
       - "3000:3000"  
     depends_on: 
+      - elastic
       - micro-mail-service
       - micro-account-service
       - micro-book-service
@@ -16,7 +17,7 @@ services:
       - "host.docker.abc:192.168.0.13"
     networks:
       - network1
-    command: node app.js 2
+    command: /bin/bash -c "sleep 10 && node app.js 2"
 
   micro-account-service:
     container_name: micro-account-service
@@ -31,7 +32,7 @@ services:
       - "host.docker.abc:192.168.0.13"
     networks:
       - network1
-    command: node main.js 2
+    command: /bin/bash -c "sleep 10 && node main.js 2"
 
   micro-book-service:
     container_name: micro-book-service
@@ -40,12 +41,12 @@ services:
     ports:
       - "9502:9502"  
     depends_on: 
-      - rabbitMQ-service-0
+      - elastic
     extra_hosts: 
       - "host.docker.abc:192.168.0.13"
     networks:
       - network1
-    command: node main.js 2
+    command: /bin/bash -c "sleep 10 && node main.js 2"
 
   micro-transection-service:
     container_name: micro-transection-service
@@ -54,12 +55,12 @@ services:
     ports:
       - "9503:9503"  
     depends_on: 
-      - rabbitMQ-service-0
+      - elastic
     extra_hosts:  
       - "host.docker.abc:192.168.0.13"
     networks:
       - network1
-    command: node main.js 2
+    command: /bin/bash -c "sleep 10 && node main.js 2"
 
   micro-mail-service:
     container_name: micro-mail-service
@@ -69,11 +70,12 @@ services:
       - "9504:9504"  
     depends_on: 
       - rabbitMQ-service-0
+      - elastic
     extra_hosts: 
       - "host.docker.abc:192.168.0.13"
     networks:
       - network1
-    command: node main.js 2
+    command: /bin/bash -c "sleep 10 && node main.js 2"
 
   rabbitMQ-service-0:
     container_name: rabbitMQ-service-0
@@ -86,6 +88,27 @@ services:
       - "15672:15672"
     networks:
       - network1
+
+  kibana:
+    container_name: kibana-service
+    image: kibana:7.17.19
+    ports:
+      - "5601:5601"
+    networks:
+      - network1
+    depends_on: 
+      - elastic
+
+  elastic:
+    container_name: elastic-service
+    image: elasticsearch:7.17.19
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - network1
+    environment:
+      discovery.type : "single-node"
 
 networks:
   network1:
