@@ -98,6 +98,9 @@ services:
       - network1
     depends_on: 
       - elastic
+    environment:
+      ELASTICSEARCH_HOSTS: http://elastic-service:9200
+
 
   elastic:
     container_name: elastic-service
@@ -108,7 +111,8 @@ services:
     networks:
       - network1
     environment:
-      discovery.type : "single-node"
+      discovery.type: "single-node"
+   
 
 networks:
   network1:

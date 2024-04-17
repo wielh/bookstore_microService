@@ -9,9 +9,9 @@ docker build -f  micro-mail\Dockerfile -t micro-mail .
 docker build -f  micro-book\Dockerfile -t micro-book .
 docker build -f  micro-transection\Dockerfile -t micro-transection .
 
-docker create -it -d --name rabbitMQ-container-0 -p 5672:5672 -p 15672:15672 -e RABBITMQ_DEFAULT_USER=root -e RABBITMQ_DEFAULT_PASS=1234 --network bookstore_network rabbitmq:management
-docker create -it -d --name elastic-container --network bookstore_network --add-host=host.docker.abc:192.168.0.13 -p 9200:9200 -p 9300:9300 elasticsearch:7.17.19
-docker create -it -d --name kibana-container --network bookstore_network --add-host=host.docker.abc:192.168.0.13 -p 5601:5601 kibana:7.17.19
+docker create -it -d --name rabbitMQ-container-0 --network bookstore_network -p 5672:5672 -p 15672:15672 -e RABBITMQ_DEFAULT_USER=root RABBITMQ_DEFAULT_PASS=1234  rabbitmq:management
+docker create -it -d --name elastic-container --network bookstore_network --add-host=host.docker.abc:192.168.0.13 -p 9200:9200 -p 9300:9300 -e discovery.type:single-node elasticsearch:7.17.19
+docker create -it -d --name kibana-container --network bookstore_network -e  --add-host=host.docker.abc:192.168.0.13 -p 5601:5601 -e ELASTICSEARCH_HOSTS:http://elastic-container:9200 kibana:7.17.19
 docker create -it -d --name micro-mail-container --network bookstore_network --add-host=host.docker.abc:192.168.0.13 -p 9504:9504 micro-mail
 docker create -it -d --name micro-account-container --network bookstore_network --add-host=host.docker.abc:192.168.0.13 -p 9501:9501  micro-account
 docker create -it -d --name micro-book-container --network bookstore_network --add-host=host.docker.abc:192.168.0.13 -p 9502:9502 micro-book
