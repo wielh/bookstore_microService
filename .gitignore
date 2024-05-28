@@ -1,4 +1,4 @@
-test/
+code-test/
 node_modules/
 proto/*.ts
 package-lock.json
