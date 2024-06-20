@@ -11,7 +11,7 @@ import mongoose from 'mongoose'
 import {google}  from "googleapis";
 import { OAuth2Client } from 'google-auth-library';
 import { Client } from '@elastic/elasticsearch';
-import { Timestamp } from 'mongodb'
+
 
 let logger: Logger
 export const hashSalt:string = "qwertasdfgzxcvb"

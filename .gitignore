@@ -1,5 +1,6 @@
 code-test/
 node_modules/
+example-api/
 proto/*.ts
 package-lock.json
 note.txt

@@ -16,6 +16,7 @@
   
 ## 3. 部署注意事項
  * 主要的微服務可以在本地執行，也可以用 docker 執行
+ * 如果用 docker-compose.yaml 進行部署的話，記得要去 services => {micro-service} => extra_hosts 將 "host.docker.abc:..." 改成本機電腦的 ip
  * mongodb 是在 windows 上的本地執行, 範例數據可從 mongo-script.js 匯入，而
  mongodb replica set 設定在 primary.cfg, secondary.cfg 與 arbiter.cfg， 詳細設定
 方法在 [ReplicaSet 設定](https://aspnetmars.blogspot.com/2019/04/windows-mongodb-replica-set-sharding.html).

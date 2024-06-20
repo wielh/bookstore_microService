@@ -1,6 +1,5 @@
 import { Schema, Document, model, FilterQuery, Types, ClientSession } from 'mongoose';
 import {pageX} from '../utils.js'
-import { objectId } from 'mongodb-typescript';
 
 class BookDocument extends Document{
     bookName: string
@@ -18,7 +17,7 @@ const bookSchema = new Schema({
     strict: false
 });
 
-export var bookModel = model<BookDocument>('book', bookSchema,'book')
+export var bookModel = model<BookDocument>('book', bookSchema, 'book')
 
 function generateFilters(bookName:string, tags:string[], priceLowerbound:number, priceUpperbound:number): FilterQuery<BookDocument> {
     let filter: FilterQuery<BookDocument> = {};
@@ -46,8 +45,8 @@ export async function count(bookName:string, tags:string[], priceLowerbound:numb
     return bookCount
 }
 
-export async function getbookData(bookName:string, tags:string[], priceLowerbound:number, priceUpperbound:number, 
-    pageSize:number, page:number, bookCount:number){
+export async function getbookData(bookName:string, tags:string[], 
+    priceLowerbound:number, priceUpperbound:number, pageSize:number, page:number, bookCount:number): Promise<BookDocument[]>{
     let pageConfig = new pageX(pageSize, bookCount)
     let skipNumber = pageConfig.getSkip(page)
     let filter = generateFilters(bookName, tags, priceLowerbound, priceUpperbound) 
