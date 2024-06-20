@@ -70,7 +70,6 @@ export async function findActivityById(id:string, activityType:number):Promise<A
     } catch (error) {
         return null
     }
-   
 }
 
 
