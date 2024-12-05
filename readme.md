@@ -31,5 +31,18 @@
  * elastic 是紀錄與搜尋 log 的引擎程式，而 kibana 是 elastic 的可視化程式。搜尋 log 的功能主要是在左上角 "discover" 欄位。
    詳細請參見[kibana教學](https://medium.com/%E7%A8%8B%E5%BC%8F%E4%B9%BE%E8%B2%A8/elk-%E6%95%99%E5%AD%B8%E8%88%87%E4%BB%8B%E7%B4%B9-c54af6f06e61)
 
+## 4.待改進的地方
+
++ 將config改成yaml檔案
+
++ mongodb 在 docker 模式下，localhost的IP會變動
+
++ 密碼 hash 的方式
+
++ 部分敏感 config 應該放在環境變數
+
++ 每個 micro-service 應該有異常處理 
+
++ 將驗證資料改成更簡潔的方式
 
 
