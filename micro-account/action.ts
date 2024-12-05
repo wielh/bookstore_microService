@@ -2,16 +2,16 @@ import * as grpc from "@grpc/grpc-js";
 import { GooogleLoginRequest, GooogleLoginResponse, LoginRequest, LoginResponse, 
     RegisterRequest, RegisterResponse, ResetPasswordRequest, ResetPasswordResponse, ResendRegisterVerifyEmailRequest,
     ResendRegisterVerifyEmailResponse,RegisterVerifyRequest,RegisterVerifyResponse} from "../proto/account.js";
-import {errorLogger,tokenExpireSecond, gateDefaultURL, accountType, rabbitMQConnection} from '../common/config.js'
 import {errSuccess, errMongo, errUserExist, errUserNotExist, errSendRegisterEmailFailed, errEmailVerifited} from '../common/errCode.js'
-import {createToken, sendMailProducer} from '../common/utils.js'
+import {createToken, sendMailProducer, errorLogger} from '../common/utils.js'
+import {accountType, GlobalConfig} from '../common/init.js'
 import * as userDB from '../common/model/user.js'
 
 export async function resendRegiterVerifyEmailImplementation(username:string, email:string): Promise<number> {
     let verificationCode = createToken({username:username, accountType: accountType.normal , email: email}, 60*60)
     const emailInfo =
         ` Hello, user ${username}, this is QueenStore bookstore.` +
-        ` Please enter the website: ${gateDefaultURL}/account/register_verify?token=${verificationCode} `+
+        ` Please enter the website: ${GlobalConfig.gate.localIP}:${GlobalConfig.gate.port}/account/register_verify?token=${verificationCode} `+
         ` to complete email varification.`+
         ` If you are not a member. Please ignore this.`;
 
@@ -113,7 +113,7 @@ export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest
             return
         }
     }
-    res.token = createToken({username:req.googleID.toString(), accountType:accountType.google, email:""},tokenExpireSecond)
+    res.token = createToken({username:req.googleID.toString(), accountType:accountType.google, email:""}, GlobalConfig.API.tokenExpireSecond)
     res.errcode = errSuccess
     callback(null,res)
 }

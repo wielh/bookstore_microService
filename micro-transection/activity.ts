@@ -1,6 +1,6 @@
 import {ActivityRequest,ActivityReponse, ActivityReponseData} from '../proto/transection.js'
 import * as grpc from "@grpc/grpc-js";
-import { errorLogger} from '../common/config.js'
+import { errorLogger} from '../common/utils.js'
 import { errMongo, errSuccess} from '../common/errCode.js'
 import * as activityDB from '../common/model/activity.js'
 

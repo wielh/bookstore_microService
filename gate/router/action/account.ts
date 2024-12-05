@@ -2,12 +2,14 @@ import {Request, Response, json, Router } from 'express';
 import passport from 'passport';
 import { Profile, Strategy } from 'passport-google-oauth20';
 import { body, param, validationResult } from 'express-validator';
+import { credentials } from '@grpc/grpc-js'
 
-import {accountServiceClient, googleVerifyID, googleVerifyPassword, googleCallbackUrl, warnLogger} from '../../../common/config.js'
-import {passwordHash, decodeToken} from '../../../common/utils.js'
+import { googleCallbackUrl, GlobalConfig, accountServiceURL} from '../../../common/init.js'
+import { decodeToken, warnLogger} from '../../../common/utils.js'
 import {errParameter, errMicroServiceNotResponse, errSuccess, errGoogleToken, errToken} from '../../../common/errCode.js'
 import * as a from '../../../proto/account.js'
 import {verifyToken, getUsernameInToken} from './common.js'
+import {AccountServiceClient} from '../../../proto/account.js'
 
 export function registerServiceAccount(): Router {
     let router = Router()
@@ -61,8 +63,8 @@ export function registerServiceAccount(): Router {
 }
 
 const googleVerifyStrategy = new Strategy({
-    clientID: googleVerifyID,
-    clientSecret:  googleVerifyPassword,
+    clientID: GlobalConfig.googleOauth2.googleVerifyID,
+    clientSecret:  GlobalConfig.googleOauth2.googlePassword,
     callbackURL: googleCallbackUrl
   }, function(_accessToken:string, _refreshToken:string, profile:Profile, cb) {
     let grpcReq = new a.GooogleLoginRequest
@@ -231,6 +233,8 @@ async function resendRegisterVerifyEmail(req:Request, res:Response):Promise<void
         }
     })
 }
+
+var accountServiceClient = new AccountServiceClient( accountServiceURL, credentials.createInsecure())
 
 
 

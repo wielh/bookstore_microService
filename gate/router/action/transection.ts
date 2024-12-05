@@ -1,11 +1,13 @@
 import {Request, Response, json, Router} from 'express';
 import { body, query ,validationResult } from 'express-validator';
+import {credentials} from '@grpc/grpc-js'
 
 import {verifyToken, getUserTypeInToken, getUsernameInToken} from './common.js'
-import {transectionServiceClient, infoLogger} from '../../../common/config.js'
+import {transectionServiceURL} from '../../../common/init.js'
 import {errParameter,errMicroServiceNotResponse} from '../../../common/errCode.js'
-import {castToString} from '../../../common/utils.js'
+import {castToString, infoLogger} from '../../../common/utils.js'
 import * as transectionProto from '../../../proto/transection.js'
+
 
 const isSingalBookTransection = (value: any) => {
     if (!value) {
@@ -260,3 +262,5 @@ async function transectionRecord(req:Request, res:Response) {
         return
     })
 }
+
+var transectionServiceClient = new transectionProto.TransectionServiceClient(transectionServiceURL, credentials.createInsecure())

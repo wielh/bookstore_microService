@@ -1,8 +1,8 @@
 import * as grpc from "@grpc/grpc-js";
-import {bookServiceURL,  errorLogger, infoLogger, setElasticIndex} from '../common/config.js'
+import {bookServiceURL} from '../common/config.js'
 import {Book, BookListRequest, BookListResponse,UnimplementedBookServiceService, BookData} from "../proto/book.js";
 import {errMongo, errSuccess} from '../common/errCode.js'
-import {pageX} from '../common/utils.js'
+import {pageX , errorLogger, infoLogger, setElasticIndex} from '../common/utils.js'
 import * as bookDB from '../common/model/book.js'
 
 async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResponse>, callback: grpc.sendUnaryData<BookListResponse>){

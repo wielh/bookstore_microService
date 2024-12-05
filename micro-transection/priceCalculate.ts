@@ -1,7 +1,7 @@
 
 import {TransectionRequest, TransectionResponse, ActivityReponseData, BookInfo as BookInfoRes} from '../proto/transection.js'
 import { errMongo, errSuccess} from '../common/errCode.js'
-import { errorLogger } from '../common/config.js'
+import { errorLogger } from '../common/utils.js'
 
 import * as bookDB from '../common/model/book.js'
 import * as activityDB from '../common/model/activity.js'

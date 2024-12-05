@@ -1,5 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
-import {accountServiceURL,rabbitMQconnect, errorLogger, infoLogger, setElasticIndex} from '../common/config.js'
+import {rabbitMQconnect, accountServiceURL} from '../common/init'
+import {errorLogger, infoLogger, setElasticIndex} from '../common/utils.js'
 import { UnimplementedAccountServiceService} from "../proto/account.js";
 import {register, googleLogin, login, resetPassword, resendRegisterVerifyEmail, registerVerify} from './action.js'
 

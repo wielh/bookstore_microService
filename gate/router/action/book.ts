@@ -1,10 +1,12 @@
 import {Request, Response, Router} from 'express';
 import { query, validationResult } from 'express-validator';
+import {credentials} from '@grpc/grpc-js'
 
-import {bookServiceClient} from '../../../common/config.js'
 import {errParameter,errMicroServiceNotResponse} from '../../../common/errCode.js'
 import {BookListRequest,BookListResponse} from '../../../proto/book.js'
 import {castToString, castToStringArray} from '../../../common/utils.js'
+import {BookServiceClient} from '../../../proto/book.js'
+import { bookServiceURL } from '../../../common/init.js'
 
 export function registerServiceBook(): Router{
     let router = Router()
@@ -90,3 +92,5 @@ async function listBook(req:Request, res:Response):Promise<void> {
         return
     })
 }
+
+var bookServiceClient = new BookServiceClient(bookServiceURL, credentials.createInsecure())

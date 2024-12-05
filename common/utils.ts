@@ -1,9 +1,9 @@
 
 import jwt from 'jsonwebtoken';
 
-import {tokenKey, channelName} from '../common/config.js'
-import {Connection} from 'amqplib'
-import {hash, genSalt, compare} from "bcrypt"
+import { GlobalConfig, elasticClient, log as logger, rabbitMQConenctionStr} from '../common/init.js'
+import { connect, Connection } from 'amqplib'
+import { hash, genSalt, compare } from "bcrypt"
 
 export async function passwordHash(password:string):Promise<string> {
     const salt = await genSalt(10);
@@ -80,7 +80,7 @@ export function decodeToken(token:string):UserTokenVal {
 }
 
 export function createToken(user: UserTokenVal, second:number):string{
-    return sign(user,  tokenKey, { expiresIn: second});
+    return sign(user, GlobalConfig.API.tokenKey, { expiresIn: second});
 }
 
 export class pageX {
@@ -132,16 +132,95 @@ export function getCurrentMonthFirstDayTimestamp(currentDateTime:number): number
     return MonthlyFirstDay.getTime();
 }
 
+//============================================================================================================
+
+var rabbitMQConnection: Connection 
+
+export async function getRabbitMQConnection() {
+    return rabbitMQConnection
+}
+
+export async function rabbitMQconnect() {
+    try {
+        rabbitMQConnection = await connect(rabbitMQConenctionStr);
+    } catch(err) {
+        console.error('Error connecting to rabbitMQ with host:', err);
+    }
+}
+
 export async function sendMailProducer(rabbitMQConnection:Connection, emailAddress:string, subject:string , message:string): Promise<boolean>{
     try {
         const channel = await rabbitMQConnection.createChannel();
-        await channel.assertQueue(channelName.getVerificationCode, { durable: true });
+        await channel.assertQueue(GlobalConfig.rabbitMQ.ChannelName.getVerificationCode, { durable: true });
         const rabbitMQMessage = JSON.stringify(
             {emailAddress:emailAddress, subject:subject ,message:message})
-        channel.sendToQueue(channelName.getVerificationCode, Buffer.from(rabbitMQMessage))
+        channel.sendToQueue(GlobalConfig.rabbitMQ.ChannelName.getVerificationCode, Buffer.from(rabbitMQMessage))
         await channel.close();
     } catch (error) {
         return false;
     }
     return true
 }
+
+//============================================================================================================
+
+function generateMessage(username:string, functionName: string, message:string, data:any):string {
+    return `[${functionName}][${username}][${getCurrentDatetime()}]:${message},data=|| ${data} ||`
+}
+
+function getFuncName(): string {
+    const stack = new Error().stack;
+    if (stack) {
+        const match = stack.match(/at (\w+)/);
+        if (match && match[2]) {
+            return match[2]
+        }
+    }
+    return ""
+}
+
+let elasticIndex = ""
+
+export function setElasticIndex(serviceName:string) {
+    elasticIndex = serviceName
+}
+
+export function errorLogger(username:string, message:string, data:any, error:any):void {
+    const funcName = getFuncName()
+    logger.error(generateMessage(username, funcName , message, data), error)
+    elasticClient.index({index:elasticIndex,body: {
+        functionName: funcName , 
+        message: message,
+        data: data,
+        level : "error", 
+        error: error,
+        datetime: new Date()
+    }});
+}
+
+export function warnLogger(username:string, message:string, data:any, error:any):void {
+    const funcName = getFuncName()
+    logger.warn(generateMessage(username, funcName , message, data), error)
+    elasticClient.index({index:elasticIndex,body: {
+        functionName: funcName , 
+        message: message,
+        data: data,
+        level : "warn", 
+        error: error,
+        datetime: new Date()
+    }});
+}
+
+export function infoLogger(username:string, message:string, data:any):void {
+    const funcName = getFuncName()
+    logger.info(generateMessage(username, funcName ,  message, data))
+    elasticClient.index({index:elasticIndex,body: {
+        functionName: funcName, 
+        message: message,
+        data: data,
+        level : "Info", 
+        datetime: new Date()
+    }});
+}
+
+// ===================================================================

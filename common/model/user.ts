@@ -1,7 +1,7 @@
 
 
 import { Schema, Document, model, ClientSession} from 'mongoose';
-import { accountType } from '../config.js'
+import { accountType } from '../init.js'
 import { comparePassword, passwordHash} from '../utils.js'
 
 class UserDocument extends Document {
