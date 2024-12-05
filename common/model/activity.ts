@@ -22,7 +22,7 @@ class LevelType2 {
 class LevelType3 {
     by: number
     give: number
-    bookIds : string[]
+    bookIds: string[]
 }
 
 const activitySchema = new Schema({
@@ -36,40 +36,25 @@ const activitySchema = new Schema({
 
 const activityModel = model<ActivityDocument>('activity', activitySchema, 'activity')
 
-export async function findActivities(timeStamp:number){
+export async function findActivities(timeStamp:number) {
     let activitys = await activityModel.find({startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}}).limit(1000).exec()
     return activitys
 }
 
 export async function findActivityType1ById(Id: string, timeStamp:number):Promise<ActivityDocument>{
-    try {
-        let activity = await activityModel.findOne({ _id: new Types.ObjectId(Id), type:1, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
-        return activity
-    } catch (error) {
-        return null
-    }
+    return await activityModel.findOne({ _id: new Types.ObjectId(Id), type:1, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
 }
 
 export async function findActivityType2ById(Id: string, timeStamp:number):Promise<ActivityDocument>{
-    let activity = await activityModel.findOne({ _id: new Types.ObjectId(Id), type:2, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
-    return activity
+    return await activityModel.findOne({ _id: new Types.ObjectId(Id), type:2, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
 }
 
 export async function findActivityType3ById(Id: string, timeStamp:number):Promise<ActivityDocument>{
-    try {
-        let activity = await activityModel.findOne({ _id: new Types.ObjectId(Id), type:3, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
-        return activity
-    } catch (error) {
-        return null
-    }
+    return await activityModel.findOne({ _id: new Types.ObjectId(Id), type:3, startDate:{$lt: timeStamp}, endDate:{$gt: timeStamp}})
 }
 
 export async function findActivityById(id:string, activityType:number):Promise<ActivityDocument> {
-    try {
-        return await activityModel.findOne({ _id: new Types.ObjectId(id), type:activityType})
-    } catch (error) {
-        return null
-    }
+    return await activityModel.findOne({ _id: new Types.ObjectId(id), type:activityType})
 }
 
 

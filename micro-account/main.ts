@@ -11,9 +11,9 @@ server.addService(UnimplementedAccountServiceService.definition,
 server.bindAsync(accountServiceURL,grpc.ServerCredentials.createInsecure(),
   (err: Error | null, port: number) => {
     if (err) {
-      errorLogger("micro-account-service", "server.bindAsync", "error happens on micro-account start", "", err)
+      errorLogger("micro-account-service", "error happens on micro-account start", "", err)
     } else {
-      infoLogger("micro-account-service", "server.bindAsync", `Server run on port: ${port}`, "")
+      infoLogger("micro-account-service", `Server run on port: ${port}`, "")
     }
   }
 );

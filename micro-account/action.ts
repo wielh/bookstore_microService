@@ -20,7 +20,6 @@ export async function resendRegiterVerifyEmailImplementation(username:string, em
 } 
 
 export async function register(call: grpc.ServerUnaryCall<RegisterRequest, RegisterResponse>, callback: grpc.sendUnaryData<RegisterResponse>): Promise<void> {
-    let functionName:string = "register"
     let req = call.request
     let res = new RegisterResponse()
     try {
@@ -31,7 +30,7 @@ export async function register(call: grpc.ServerUnaryCall<RegisterRequest, Regis
             return
         }
     } catch (error) {
-        errorLogger(req.base.username, functionName,"mongoErr happens while searching user", call.request,error)
+        errorLogger(req.base.username,"mongoErr happens while searching user", call.request, error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -40,7 +39,7 @@ export async function register(call: grpc.ServerUnaryCall<RegisterRequest, Regis
     try {
         await userDB.insertNormalUser(req.base.username, req.base.password, req.email , req.name)
     } catch (error) {
-        errorLogger(req .base.username, functionName, "mongoErr happens while insert new data to collection user", req, error)
+        errorLogger(req .base.username, "mongoErr happens while insert new data to collection user", req, error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -51,7 +50,6 @@ export async function register(call: grpc.ServerUnaryCall<RegisterRequest, Regis
 }
 
 export async function resendRegisterVerifyEmail(call: grpc.ServerUnaryCall<ResendRegisterVerifyEmailRequest,ResendRegisterVerifyEmailResponse>, callback: grpc.sendUnaryData<ResendRegisterVerifyEmailResponse>) {
-    let functionName:string = "resendRegiterVerifyEmail"
     let req = call.request
     let res = new ResendRegisterVerifyEmailResponse()
 
@@ -63,7 +61,7 @@ export async function resendRegisterVerifyEmail(call: grpc.ServerUnaryCall<Resen
             return
         }
     } catch (error) {
-        errorLogger(req.base.username, functionName, "mongoErr happens while searching user", call.request,error)
+        errorLogger(req.base.username, "mongoErr happens while searching user", call.request, error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -74,7 +72,6 @@ export async function resendRegisterVerifyEmail(call: grpc.ServerUnaryCall<Resen
 } 
 
 export async function registerVerify(call: grpc.ServerUnaryCall<RegisterVerifyRequest,RegisterVerifyResponse>, callback: grpc.sendUnaryData<RegisterVerifyResponse>) {
-    let functionName: string = "registerVerify"
     let req = call.request
     let res = new RegisterVerifyResponse()
     try {
@@ -85,7 +82,7 @@ export async function registerVerify(call: grpc.ServerUnaryCall<RegisterVerifyRe
             return
         }
     } catch (error) {
-        errorLogger(req.base.username, functionName, "mongoErr happens while searching user", call.request,error)
+        errorLogger(req.base.username,  "mongoErr happens while searching user", call.request,error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -94,14 +91,13 @@ export async function registerVerify(call: grpc.ServerUnaryCall<RegisterVerifyRe
 }
 
 export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest, GooogleLoginResponse>, callback: grpc.sendUnaryData<GooogleLoginResponse>):Promise<void> {
-    let functionName:string = "googleLogin"
     let req = call.request
     let res = new GooogleLoginResponse()
     let exist = true
     try {
         exist = await userDB.googleUserExist(req.googleID)
     } catch (error) {
-        errorLogger(req.googleID.toString(), functionName, "mongoErr happens while searching user", call.request,error)
+        errorLogger(req.googleID.toString(), "mongoErr happens while searching user", call.request,error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -111,7 +107,7 @@ export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest
         try {  
             await userDB.insertGoogleUser(req.googleID,req.googleName,req.googleEmail)
         } catch (error) {
-            errorLogger(req.googleID.toString(), functionName, "mongoErr happens while insert new user", req, error)
+            errorLogger(req.googleID.toString(), "mongoErr happens while insert new user", req, error)
             res.errcode = errMongo
             callback(error,res)
             return
@@ -123,10 +119,8 @@ export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest
 }
 
 export async function login(call: grpc.ServerUnaryCall<LoginRequest, LoginResponse>, callback: grpc.sendUnaryData<LoginResponse>): Promise<void> {
-    let functionName:string = "login"
     let res = new LoginResponse()
     try {
-       
         let exist = await userDB.normalUserExistWithPWD(call.request.base.username, call.request.base.password)
         if (!exist) {
             res.errcode = errUserNotExist
@@ -134,7 +128,7 @@ export async function login(call: grpc.ServerUnaryCall<LoginRequest, LoginRespon
             return
         }
     } catch (error) {
-        errorLogger(call.request.base.username, functionName, "mongoErr happens while searching user", call.request, error)
+        errorLogger(call.request.base.username, "mongoErr happens while searching user", call.request, error)
         res.errcode = errMongo
         callback(error,res)
         return
@@ -143,7 +137,6 @@ export async function login(call: grpc.ServerUnaryCall<LoginRequest, LoginRespon
 }
  
 export async function resetPassword(call: grpc.ServerUnaryCall<ResetPasswordRequest, ResetPasswordResponse>, callback: grpc.sendUnaryData<ResetPasswordResponse>): Promise<void> {
-    let functionName:string = "resetPassword"
     let req = call.request
     let res:ResetPasswordResponse = new ResetPasswordResponse()
     try {
@@ -154,7 +147,7 @@ export async function resetPassword(call: grpc.ServerUnaryCall<ResetPasswordRequ
             return
         }
     } catch (error) {
-        errorLogger(req.base.username, functionName, "mongoErr happens while searching user", call.request,error)
+        errorLogger(req.base.username, "mongoErr happens while searching user", call.request, error)
         res.errcode = errMongo
         callback(error,res)
         return

@@ -16,8 +16,8 @@ const isSingalBookTransection = (value: any) => {
         throw new Error('field books.bookId should be string');
     }
         
-    if (typeof value.bookNumber !== 'number' || value.price < 0) {
-        throw new Error('field books.bookNumber should be number and min value >= 0');
+    if (typeof value.bookNumber !== 'number' || value.bookNumber <= 0) {
+        throw new Error('field books.bookNumber should be number and min value > 0');
     }
     return true;
 };
@@ -32,12 +32,20 @@ export function registerServiceTransection(): Router{
             body("activityType").isInt().withMessage("field activityType should be int"),
             body("books").isArray().custom(
                 (value) => {
-                    if (Array.isArray(value)) {
-                      value.forEach((tr: any) => {
-                        isSingalBookTransection(tr);
-                      });
+                    if (!Array.isArray(value)) {
+                        throw new Error('field books should be array');
                     }
-                    return true;
+
+                    let bookIds = new Set<string>()
+                    value.forEach((tr: any) => {
+                        isSingalBookTransection(tr);
+                        const id = tr.bookId as string
+                        if (bookIds.has(id)) {
+                            throw new Error('field books has dupulicated ID');
+                        } 
+                        bookIds.add(id) 
+                    });
+                    return true
                 }
             )
         ],
@@ -153,7 +161,7 @@ async function transection(req:Request, res:Response):Promise<void> {
         grpcReq.bookInfo.push(book)
     }
  
-    infoLogger(grpcReq.username,"transection","A new transection request start", grpcReq)
+    infoLogger(grpcReq.username,"A new transection request start", grpcReq)
     transectionServiceClient.transection(grpcReq,(err, response) => {
             if (err || !response) {
                 console.log(err)

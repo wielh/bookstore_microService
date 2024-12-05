@@ -54,7 +54,6 @@ export async function normalUserExistWithPWD(username:string, password:string): 
     if( doc === null) {
         return false
     }
-
     return await comparePassword(password, doc.password.toString())
 }
 

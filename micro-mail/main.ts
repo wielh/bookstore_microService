@@ -26,7 +26,7 @@ function sendEmail(channelName:string) {
         channel.consume(channelName,
             async (msg) => {
                 message = msg
-                infoLogger("micro-mail-service", "sendEmail", "" , `${message}`);
+                infoLogger("micro-mail-service", "" , `${message}`);
                 if (msg !== null) {
                     const emailMessage = JSON.parse(msg.content.toString())
                     const {emailAddress, subject, message} = emailMessage
@@ -35,7 +35,7 @@ function sendEmail(channelName:string) {
             }, options
         );
     } catch (error) {
-        errorLogger("micro-mail-service", "sendEmail", "An error happens while consuming message from rabbitMQ" , `${message}` , error);
+        errorLogger("micro-mail-service", "An error happens while consuming message from rabbitMQ" , `${message}` , error);
     }
 }
 
@@ -44,7 +44,7 @@ function sendVerificationMail() {
 }
 
 setElasticIndex("micro-mail")
-infoLogger("micro-mail-service", "main", `Server run on port: ${Port.microMail}`, "")
+infoLogger("micro-mail-service", `Server run on port: ${Port.microMail}`, "")
 await rabbitMQconnect()
 const channel = await rabbitMQConnection.createChannel()
 await channel.assertQueue(channelName.getVerificationCode, { durable: true});

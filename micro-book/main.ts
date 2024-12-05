@@ -3,10 +3,9 @@ import {bookServiceURL,  errorLogger, infoLogger, setElasticIndex} from '../comm
 import {Book, BookListRequest, BookListResponse,UnimplementedBookServiceService, BookData} from "../proto/book.js";
 import {errMongo, errSuccess} from '../common/errCode.js'
 import {pageX} from '../common/utils.js'
-import * as bookDB from '../common/dbStructure/book.js'
+import * as bookDB from '../common/model/book.js'
 
 async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResponse>, callback: grpc.sendUnaryData<BookListResponse>){
-    let functionName:string = "bookList"
     let req = call.request
     let res = new BookListResponse()
     let bookCount = 0 
@@ -14,7 +13,7 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
     try {
         bookCount = await bookDB.count(req.bookName, req.tags, req.priceLowerbound, req.priceUpperbound)
     } catch (error) {
-        errorLogger("", functionName, "mongoErr happens while searching book", req, error)
+        errorLogger("", "mongoErr happens while searching book", req, error)
         res.errcode = errMongo
         callback(null,res)
         return
@@ -38,7 +37,7 @@ async function bookList(call: grpc.ServerUnaryCall<BookListRequest, BookListResp
             books.push(book)
         }
     } catch (error) {
-        errorLogger("", functionName, "mongoErr happens while searching book", req, error)
+        errorLogger("", "mongoErr happens while searching book", req, error)
         res.errcode = errMongo
         callback(null,res)
         return
@@ -60,9 +59,9 @@ server.addService( UnimplementedBookServiceService.definition, {bookList})
 server.bindAsync( bookServiceURL , grpc.ServerCredentials.createInsecure(), 
 (err: Error | null, port: number) => {
     if (err) {
-        errorLogger("micro-book-service", "server.bindAsync", "error happens on micro-book start", "", err)
+        errorLogger("micro-book-service", "error happens on micro-book start", "", err)
     } else {
-        infoLogger("micro-book-service", "server.bindAsync", `Server run on port: ${port}`, "")
+        infoLogger("micro-book-service", `Server run on port: ${port}`, "")
     }
   }
 );

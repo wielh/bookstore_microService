@@ -54,22 +54,18 @@ export async function getbookData(bookName:string, tags:string[],
     return result
 }
 
-export async function getBookById(bookId:string): Promise<BookDocument>{
+export async function getBookById(bookId:string): Promise<BookDocument> {
     try {
         return await bookModel.findOne({_id:new Types.ObjectId(bookId)})
-    } catch (error) {
+    } catch {
         return null
     }
 }
 
 export async function takeBooks(bookId:string, bookNumber:number, session:ClientSession):Promise<boolean> {
-    try {
-        let r = await bookModel.findOneAndUpdate(
-            {_id:new Types.ObjectId(bookId) , remainNumber:{$gte:bookNumber}}, {$inc:{remainNumber:-1*bookNumber}}, { new:true, session: session})
-        return !(r == null)
-    } catch {
-        return false
-    }
+    let r = await bookModel.findOneAndUpdate(
+        {_id:new Types.ObjectId(bookId) , remainNumber:{$gte:bookNumber}}, {$inc:{remainNumber:-1*bookNumber}}, { new:true, session: session})
+    return !(r == null)
 }
 
 

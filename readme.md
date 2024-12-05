@@ -33,12 +33,13 @@
 
 ## 4.待改進的地方
 
-+ 將config改成yaml檔案
++ 實做依賴注入
+
++ 將 config 改成 yaml 檔案
 
 + mongodb 在 docker 模式下，localhost的IP會變動
 
 + 部分敏感 config 應該放在環境變數
 
-+ 每個 micro-service 應該有異常處理 
 
 

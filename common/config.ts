@@ -193,10 +193,22 @@ function generateMessage(username:string, functionName: string, message:string, 
     return `[${functionName}][${username}][${getCurrentDatetime()}]:${message},data=|| ${data} ||`
 }
 
-export function errorLogger(username:string, functionName:string, message:string, data:any, error:any):void {
-    logger.error(generateMessage(username, functionName, message, data), error)
+function getFuncName(): string {
+    const stack = new Error().stack;
+    if (stack) {
+        const match = stack.match(/at (\w+)/);
+        if (match && match[2]) {
+            return match[2]
+        }
+    }
+    return ""
+}
+
+export function errorLogger(username:string, message:string, data:any, error:any):void {
+    const funcName = getFuncName()
+    logger.error(generateMessage(username, funcName , message, data), error)
     elasticClient.index({index:elasticIndex,body: {
-        functionName: functionName, 
+        functionName: funcName , 
         message: message,
         data: data,
         level : "error", 
@@ -205,10 +217,11 @@ export function errorLogger(username:string, functionName:string, message:string
     }});
 }
 
-export function warnLogger(username:string, functionName:string, message:string, data:any, error:any):void {
-    logger.warn(generateMessage(username, functionName, message, data), error)
+export function warnLogger(username:string, message:string, data:any, error:any):void {
+    const funcName = getFuncName()
+    logger.warn(generateMessage(username, funcName , message, data), error)
     elasticClient.index({index:elasticIndex,body: {
-        functionName: functionName, 
+        functionName: funcName , 
         message: message,
         data: data,
         level : "warn", 
@@ -217,10 +230,11 @@ export function warnLogger(username:string, functionName:string, message:string,
     }});
 }
 
-export function infoLogger(username:string, functionName:string, message:string, data:any):void {
-    logger.info(generateMessage(username, functionName, message, data))
+export function infoLogger(username:string, message:string, data:any):void {
+    const funcName = getFuncName()
+    logger.info(generateMessage(username, funcName ,  message, data))
     elasticClient.index({index:elasticIndex,body: {
-        functionName: functionName, 
+        functionName: funcName, 
         message: message,
         data: data,
         level : "Info", 

@@ -3,8 +3,8 @@ import {TransectionRequest, TransectionResponse, ActivityReponseData, BookInfo a
 import { errMongo, errSuccess} from '../common/errCode.js'
 import { errorLogger } from '../common/config.js'
 
-import * as bookDB from '../common/dbStructure/book.js'
-import * as activityDB from '../common/dbStructure/activity.js'
+import * as bookDB from '../common/model/book.js'
+import * as activityDB from '../common/model/activity.js'
 
 class BookInfo {
     bookId: string
@@ -78,7 +78,6 @@ async function calculatePriceType1(req:TransectionRequest ,answer:Answer): Promi
         return null
     }
 
-    let functionName = "calculatePriceType1"
     answer = await baseCalculatePrice(req, answer) 
     let discount = 1
     try {
@@ -86,10 +85,10 @@ async function calculatePriceType1(req:TransectionRequest ,answer:Answer): Promi
             if (level.price > answer.totalPrice) {
                 break
             } 
-            discount = level.discount 
+            discount = level.discount  
         }
     } catch (error) {
-        errorLogger("", functionName, "Activity config error", activity,error)
+        errorLogger("", "Activity config error", activity,error)
         answer.errCode = errMongo
         return answer
     }
@@ -103,7 +102,6 @@ async function calculatePriceType1(req:TransectionRequest ,answer:Answer): Promi
 }
 
 async function calculatePriceType2(req:TransectionRequest, answer:Answer): Promise<Answer>  {
-    let functionName = "calculatePriceType2"
     let activity = await activityDB.findActivityType2ById(req.activityID, answer.transectionTime)
     if (activity == null) {
         return null
@@ -119,7 +117,7 @@ async function calculatePriceType2(req:TransectionRequest, answer:Answer): Promi
             discount = level.discount 
         }
     } catch (error) {
-        errorLogger("", functionName, "Activity config error", activity, error)
+        errorLogger("", "Activity config error", activity, error)
         answer.errCode = errMongo
         return answer
     }
@@ -138,7 +136,6 @@ async function calculatePriceType3(req:TransectionRequest, answer:Answer): Promi
         return null
     } 
 
-    let functionName = "calculatePriceType3"
     answer = await baseCalculatePrice(req,answer) 
     let totalDiscount = 0
     try {
@@ -172,7 +169,7 @@ async function calculatePriceType3(req:TransectionRequest, answer:Answer): Promi
          }
        }
     } catch (error) {
-        errorLogger("", functionName, "Activity config error", activity,error)
+        errorLogger("","Activity config error", activity, error)
         answer.errCode = errMongo
         return answer
     }

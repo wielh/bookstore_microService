@@ -71,7 +71,7 @@ const googleVerifyStrategy = new Strategy({
     grpcReq.googleEmail = profile.emails? profile.emails[0].value:""
     accountServiceClient.googleLogin(grpcReq,(error, response) => {
         if (error || !response || response.errcode) {
-            warnLogger(grpcReq.googleName,"googleLogin","An googleLogin error happens",response,error)
+            warnLogger(grpcReq.googleName,"An googleLogin error happens",response,error)
             return cb(null,{});
         }
         return cb(null,{token: response.token});
