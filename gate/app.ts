@@ -8,7 +8,9 @@ registerRouter(app)
 setElasticIndex("gate")
 //start
 app.listen(GlobalConfig.gate.port, function () {
+    console.log("...........")
     infoLogger("gate-service", `Example app listening on port ${GlobalConfig.gate.port} !`, "")
+    console.log("...........")
 });
  
 

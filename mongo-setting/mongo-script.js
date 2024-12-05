@@ -3,7 +3,7 @@ const db_name = "bookstore"
 const db_user = "bookstore_user"
 const role_name = "myrole"
 const mongo_db_str =`mongodb://127.0.0.1:27017`   // or other mongodb user with all privileges (root)
-const mongo_db_client = new MongoClient(mongo_db_str, { monitorCommands: true ,maxPoolSize:1000});
+const mongo_db_client = new MongoClient(mongo_db_str, { monitorCommands: true ,maxPoolSize:10});
 
 const DB = mongo_db_client.db(db_name)
 try {
@@ -12,39 +12,6 @@ try {
   await DB.createCollection("book")
   await DB.createCollection("income_monthly")
   await DB.createCollection("transection_log")
-} catch(error) {
-  console.log(error)
-}
-
-try {
-  await DB.command({createUser: db_user, pwd: "test", roles: []})
-  await DB.command({
-    createRole: role_name,
-    privileges:[
-        {
-            resource: { db: db_name, collection: "user" },
-            actions: [ "insert", "find", "update"]
-        },{
-            resource: { db: db_name, collection: "activity" },
-            actions: [ "find" ]
-        },{
-            resource: { db: db_name, collection: "book" },
-            actions: [ "find" ]
-        },{
-            resource: { db: db_name, collection: "income_monthly" },
-            actions: [ "insert", "find", "update" ]
-        },{
-            resource: { db: db_name, collection: "transection_log" },
-            actions: [ "insert", "find" ]
-        }
-    ],
-    roles: []
-  })
-
-  await DB.command({
-    grantRolesToUser:db_user,
-    roles:[role_name]
-  })
 } catch(error) {
   console.log(error)
 }
@@ -162,6 +129,39 @@ try {
 
   await DB.collection("transection_log").createIndex({username:1,time:-1})
   await DB.collection("transection_log").createIndex({time:-1})
+} catch(error) {
+  console.log(error)
+}
+
+try {
+  await DB.command({createUser: db_user, pwd: "test", roles: []})
+  await DB.command({
+    createRole: role_name,
+    privileges:[
+        {
+            resource: { db: db_name, collection: "user" },
+            actions: [ "insert", "find", "update"]
+        },{
+            resource: { db: db_name, collection: "activity" },
+            actions: [ "find" ]
+        },{
+            resource: { db: db_name, collection: "book" },
+            actions: [ "find" ]
+        },{
+            resource: { db: db_name, collection: "income_monthly" },
+            actions: [ "insert", "find", "update" ]
+        },{
+            resource: { db: db_name, collection: "transection_log" },
+            actions: [ "insert", "find" ]
+        }
+    ],
+    roles: []
+  })
+
+  await DB.command({
+    grantRolesToUser:db_user,
+    roles:[role_name]
+  })
 } catch(error) {
   console.log(error)
 }

@@ -136,7 +136,7 @@ export function getCurrentMonthFirstDayTimestamp(currentDateTime:number): number
 
 var rabbitMQConnection: Connection 
 
-export async function getRabbitMQConnection() {
+export function getRabbitMQConnection() {
     return rabbitMQConnection
 }
 

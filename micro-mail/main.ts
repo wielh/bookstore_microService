@@ -1,6 +1,6 @@
 
 
-import {infoLogger, errorLogger, setElasticIndex} from "../common/utils.js"
+import {infoLogger, errorLogger, setElasticIndex, rabbitMQconnect,getRabbitMQConnection} from "../common/utils.js"
 import {createTransport} from 'nodemailer'
 import {GlobalConfig} from '../common/init.js'
 
@@ -8,7 +8,7 @@ export async function sendMailImplementation(emailAddress:string, subject:string
     try {
         await transporter.sendMail(
             {
-                from: websiteEmail,
+                from: GlobalConfig.googleOauth2.websiteEmail,
                 to: emailAddress,
                 subject: subject,
                 html: message,
@@ -41,16 +41,17 @@ function sendEmail(channelName:string) {
 }
 
 function sendVerificationMail() {
-    sendEmail(channelName.getVerificationCode)
+    sendEmail(GlobalConfig.rabbitMQ.ChannelName.getVerificationCode)
 }
 
 var transporter = createTransport(
     {  
+        host: "smtp.gmail.com",
         service: 'gmail',
-        port: Port.sendMail,
+        port: GlobalConfig.microMail.sendMailport,
         secure: true,
         auth: {
-            user: websiteEmail,
+            user: GlobalConfig.googleOauth2.websiteEmail,
             pass:"***"
         },
         tls: {
@@ -61,6 +62,6 @@ var transporter = createTransport(
 setElasticIndex("micro-mail")
 infoLogger("micro-mail-service", `Server run on port: ${GlobalConfig.microMail.url.port}`, "")
 await rabbitMQconnect()
-const channel = await rabbitMQConnection.createChannel()
-await channel.assertQueue(channelName.getVerificationCode, { durable: true});
+const channel = await getRabbitMQConnection().createChannel()
+await channel.assertQueue(GlobalConfig.rabbitMQ.ChannelName.getVerificationCode, { durable: true});
 sendVerificationMail()

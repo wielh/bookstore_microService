@@ -2,11 +2,11 @@ API:
   tokenKey: ${BOOKSTORE_TOKEN_KEY}
   tokenExpireSecond: 86400
   
-
 googleOauth2:
   googleVerifyID: 118619557524-ej7k7ceopnn8glgi9foksta3t72vnca3.apps.googleusercontent.com
   googlePassword: ${BOOKSTORE_API_GOOGLEOAUTH2_PASSWORD}
   websiteEmail: wielh.erlow@gmail.com
+  sendMailPassword: ${BOOKSTORE_SENDMAIL_PASSWORD}
 
 elastic:
   localIP: "127.0.0.1"
@@ -21,6 +21,7 @@ rabbitMQ:
     dockerIP: rabbitMQ-container-0
     dockerComposeIP : rabbitMQ-service-0
     port: 5672
+    
   channelName:
     getVerificationCode: getVerificationCode
 mongo:
@@ -31,32 +32,37 @@ mongo:
     dockerIP: host.docker.abc
     dockerComposeIP : host.docker.abc
     port: 27017
+  dbName: bookstore
+  directConnection: true
+  serverSelectionTimeoutMS: 5000
+  authSource: bookstore
 
 gate:
   localIP: "127.0.0.1"
   port: 3000 
-micro-account:
+microAccount:
   localIP: "127.0.0.1"
   dockerIP: micro-account-container
   dockerComposeIP : micro-account-service
   port: 9501
-micro-book: 
+microBook: 
   localIP: "127.0.0.1"
   dockerIP: micro-book-container
   dockerComposeIP : micro-book-service
   port: 9502
-micro-transection: 
+microTransection: 
   localIP: "127.0.0.1"
   dockerIP: micro-transection-container
   dockerComposeIP : micro-transection-service
   port: 9503
-micro-mail:
+microMail:
   url:
     localIP: "127.0.0.1"
     dockerIP: micro-mail-container
     dockerComposeIP : micro-mail-service
     port: 9504
   sendMailport: 465
+  sendMailPass: ugezalaefpywcegr
 
 
 

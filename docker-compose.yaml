@@ -101,7 +101,6 @@ services:
     environment:
       ELASTICSEARCH_HOSTS: http://elastic-service:9200
 
-
   elastic:
     container_name: elastic-service
     image: elasticsearch:7.17.19
@@ -113,7 +112,6 @@ services:
     environment:
       discovery.type: "single-node"
    
-
 networks:
   network1:
     name : bookstore_network_compose

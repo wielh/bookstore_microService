@@ -1,15 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'yaml'
-
-
-import {BookServiceClient} from '../proto/book.js'
-import {TransectionServiceClient} from '../proto/transection.js'
+import { fileURLToPath } from 'url';
 
 import {createLogger, Logger, transports, format} from 'winston'
-import {credentials} from '@grpc/grpc-js'
-import {connect, Connection} from 'amqplib'
-import {createTransport} from 'nodemailer'
 import mongoose from 'mongoose'
 import {google}  from "googleapis";
 import {OAuth2Client} from 'google-auth-library';
@@ -31,6 +25,7 @@ interface Config {
     googleVerifyID: string
     googlePassword: string
     websiteEmail: string
+    sendMailPassword: string
   }
   elastic: URL,
   rabbitMQ: {
@@ -41,7 +36,7 @@ interface Config {
       getVerificationCode:string
     }
   }
-  MongoDB: {
+  mongo: {
     username:string
     password:string
     url: URL
@@ -85,12 +80,20 @@ export var bookServiceURL:string
 
 function loadConfig() {
     try {
-      const fullPath = path.resolve('config.yaml');
+      const currentFile = fileURLToPath(import.meta.url);
+      const currentDir = path.dirname(currentFile);
+      const fullPath = path.join(currentDir, "config.yaml")
       const fileContent = fs.readFileSync(fullPath, 'utf8');
       GlobalConfig = parse(fileContent) as Config;
     } catch (error) {
       throw new Error(`Failed to load YAML file: ${error.message}`);
     }
+
+    GlobalConfig.API.tokenKey = process.env.BOOKSTORE_TOKEN_KEY;
+    GlobalConfig.googleOauth2.googlePassword = process.env.BOOKSTORE_API_GOOGLEOAUTH2_PASSWORD
+    GlobalConfig.rabbitMQ.password = process.env.BOOKSTORE_RABBITMQ_PASSWORD
+    GlobalConfig.mongo.password = process.env.BOOKSTORE_MONGO_PASSWORD
+    GlobalConfig.googleOauth2.sendMailPassword = process.env.BOOKSTORE_SENDMAIL_PASSWORD
 }
 
 function getIPMode() {
@@ -136,18 +139,8 @@ async function urlInit() {
       include_granted_scopes: true
   });
 
-  try {
-    let mongoStr = `mongodb://${gc.MongoDB.username}:${gc.MongoDB.password}@${getUrl(gc.MongoDB.url)}`
-    await mongoose.connect(mongoStr, {
-      dbName: gc.MongoDB.dbName, 
-      readPreference:"secondaryPreferred",  
-      directConnection: gc.MongoDB.directConnection , 
-      serverSelectionTimeoutMS: gc.MongoDB.serverSelectionTimeoutMS, 
-      authSource: gc.MongoDB.authSource
-    })
-  } catch(error) {
-      console.error('Error connecting to MongoDB with host:', error);
-  } 
+  let mongoStr = `mongodb://${gc.mongo.username}:${gc.mongo.password}@${getUrl(gc.mongo.url)}/${gc.mongo.dbName}?authSource=${gc.mongo.authSource}`
+  await mongoose.connect(mongoStr);
 
   elasticClient = new Client({node: `http://${getUrl(gc.elastic)}`, maxRetries:3});
   log = createLogger({
@@ -157,7 +150,6 @@ async function urlInit() {
   });
 
   rabbitMQConenctionStr = `amqp://${gc.rabbitMQ.username}:${gc.rabbitMQ.password}@${getUrl(gc.rabbitMQ.url)}/`;
-
   accountServiceURL = getUrl(GlobalConfig.microAccount)
   transectionServiceURL = getUrl(GlobalConfig.microTransection)
   bookServiceURL = getUrl(GlobalConfig.microBook)

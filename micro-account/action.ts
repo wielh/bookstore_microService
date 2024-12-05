@@ -3,7 +3,7 @@ import { GooogleLoginRequest, GooogleLoginResponse, LoginRequest, LoginResponse,
     RegisterRequest, RegisterResponse, ResetPasswordRequest, ResetPasswordResponse, ResendRegisterVerifyEmailRequest,
     ResendRegisterVerifyEmailResponse,RegisterVerifyRequest,RegisterVerifyResponse} from "../proto/account.js";
 import {errSuccess, errMongo, errUserExist, errUserNotExist, errSendRegisterEmailFailed, errEmailVerifited} from '../common/errCode.js'
-import {createToken, sendMailProducer, errorLogger} from '../common/utils.js'
+import {createToken, sendMailProducer, errorLogger, getRabbitMQConnection} from '../common/utils.js'
 import {accountType, GlobalConfig} from '../common/init.js'
 import * as userDB from '../common/model/user.js'
 
@@ -15,7 +15,7 @@ export async function resendRegiterVerifyEmailImplementation(username:string, em
         ` to complete email varification.`+
         ` If you are not a member. Please ignore this.`;
 
-    let sendEmailSuccess = await sendMailProducer(rabbitMQConnection, email, "register email verificaition", emailInfo)
+    let sendEmailSuccess = await sendMailProducer(getRabbitMQConnection(), email, "register email verificaition", emailInfo)
     return sendEmailSuccess?  errSuccess: errSendRegisterEmailFailed
 } 
 
