@@ -37,12 +37,8 @@
 
 + mongodb 在 docker 模式下，localhost的IP會變動
 
-+ 密碼 hash 的方式
-
 + 部分敏感 config 應該放在環境變數
 
 + 每個 micro-service 應該有異常處理 
-
-+ 將驗證資料改成更簡潔的方式
 
 

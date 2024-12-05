@@ -1,21 +1,60 @@
 import {Request, Response, json, Router} from 'express';
+import { body, query ,validationResult } from 'express-validator';
 
-import {verifyToken} from './common.js'
-import {transectionServiceClient,warnLogger,infoLogger} from '../../../common/config.js'
-import {checkParameterFormat} from '../../../common/utils.js'
+import {verifyToken, getUserTypeInToken, getUsernameInToken} from './common.js'
+import {transectionServiceClient, infoLogger} from '../../../common/config.js'
 import {errParameter,errMicroServiceNotResponse} from '../../../common/errCode.js'
+import {castToString} from '../../../common/utils.js'
 import * as transectionProto from '../../../proto/transection.js'
+
+const isSingalBookTransection = (value: any) => {
+    if (!value) {
+        throw new Error('Each item in the books array must be a valid Book with a string title and a positive price');
+    }
+        
+    if (typeof value.bookId !== 'string') {
+        throw new Error('field books.bookId should be string');
+    }
+        
+    if (typeof value.bookNumber !== 'number' || value.price < 0) {
+        throw new Error('field books.bookNumber should be number and min value >= 0');
+    }
+    return true;
+};
 
 export function registerServiceTransection(): Router{
     let router = Router()
-    router.get('/activity_list', json(), activityList)
+    router.get('/activityList', activityList)
     router.use(verifyToken)
-    router.post('/', json(), transection)
-    router.get('/record', json(), transectionRecord)
+    router.post('/', 
+        json(), [
+            body("activityID").isString().withMessage("field activityID should be string"),
+            body("activityType").isInt().withMessage("field activityType should be int"),
+            body("books").isArray().custom(
+                (value) => {
+                    if (Array.isArray(value)) {
+                      value.forEach((tr: any) => {
+                        isSingalBookTransection(tr);
+                      });
+                    }
+                    return true;
+                }
+            )
+        ],
+        transection
+    )
+    router.get(
+        '/record', 
+        [
+            query("page").isInt({min:0}).withMessage("field page should be int and val>=0"),
+            query("pageSize").isInt({min:1}).withMessage("field activityType should be int and val >=1 "),
+        ], 
+        transectionRecord
+    )
     return router
 }
 
-class ActivityList{
+class ActivityList {
     errcode : number 
     data : {
         activityID:string
@@ -43,7 +82,7 @@ class ActivityList{
     }
 }
 
-async function activityList(req:Request, res:Response):Promise<void> {
+async function activityList(_req:Request, res:Response):Promise<void> {
     let grpcReq = new  transectionProto.ActivityRequest()
     transectionServiceClient.activityList(grpcReq,(err, response) => {
         if (err || !response) {
@@ -90,35 +129,30 @@ class TransectionRes {
     }
 }
 
-
 async function transection(req:Request, res:Response):Promise<void> {
-    if (!checkParameterFormat(req.body,"activityID", "string") ||
-        !checkParameterFormat(req.body,"activityType", "number")) {
-        res.status(200).json({errCode: errParameter});
-        return
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+       res.status(400).json({ errorCode:errParameter, errors: errors.array()});
+       return
     }
 
-    const {activityID, activityType, bookInfo} = req.body;
-    const {username, accountType} = req.query
+    const { activityID, activityType, bookInfo} = req.body;
+    const username = getUsernameInToken(req)
+    const userType = getUserTypeInToken(req)
+
     let grpcReq = new  transectionProto.TransectionRequest()
-    try {
-        grpcReq.username = username as string
-        grpcReq.userType = parseInt(accountType as string)
-        grpcReq.activityID = activityID
-        grpcReq.activityType = parseInt(activityType)
-        grpcReq.bookInfo = []
-        for (let b of bookInfo) {
-           let book = new transectionProto.BookInfo()
-           book.bookId = b.bookId
-           book.bookNumber = b.bookNumber
-           grpcReq.bookInfo.push(book)
-        }
-    } catch (error) {
-        warnLogger("","transection","An error happens while parsing data from json",[req.body, req.query], error )
-        res.status(500).json({errCode: errParameter});
-        return
+    grpcReq.username = username
+    grpcReq.userType = userType
+    grpcReq.activityID = activityID
+    grpcReq.activityType = parseInt(activityType)
+    grpcReq.bookInfo = []
+    for (let b of bookInfo) {
+        let book = new transectionProto.BookInfo()
+        book.bookId = b.bookId
+        book.bookNumber = b.bookNumber
+        grpcReq.bookInfo.push(book)
     }
-
+ 
     infoLogger(grpcReq.username,"transection","A new transection request start", grpcReq)
     transectionServiceClient.transection(grpcReq,(err, response) => {
             if (err || !response) {
@@ -191,25 +225,23 @@ class transectionRecordRes {
 }
 
 async function transectionRecord(req:Request, res:Response) {
-    if (!checkParameterFormat(req.body,"page", "number") || 
-        !checkParameterFormat(req.body,"pageSize","number")) {
-        res.status(200).json({errCode: errParameter});
-        return
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+       res.status(400).json({ errorCode:errParameter, errors: errors.array() });
+       return
     }
 
-    const {page,pageSize} = req.body;
-    const {username, accountType} = req.query
+    const  { page, pageSize } = req.query;
+    const username = getUsernameInToken(req)
+    const accountType = getUserTypeInToken(req)
+
     let grpcReq = new  transectionProto.TransectionRecordRequest()
-    try {
-        grpcReq.username = username as string
-        grpcReq.accountType = parseInt(accountType as string)
-        grpcReq.page = page
-        grpcReq.pageSize = pageSize
-    } catch (error) {
-        warnLogger("", "transectionRecord", "An error happens while parsing data from json", [req.body, req.query], error)
-        res.status(500).json({errCode: errParameter});
-        return
-    }
+    grpcReq.username = username
+    grpcReq.accountType = accountType
+    let i = parseInt(castToString(page), 10);
+    grpcReq.page = i 
+    i = parseInt(castToString(pageSize), 10);
+    grpcReq.pageSize = i
 
     transectionServiceClient.transectionRecord(grpcReq,(err, response) => {
         if (err || !response) {

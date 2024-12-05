@@ -1,7 +1,8 @@
 
 
 import { Schema, Document, model, ClientSession} from 'mongoose';
-import {accountType} from '../config.js'
+import { accountType } from '../config.js'
+import { comparePassword, passwordHash} from '../utils.js'
 
 class UserDocument extends Document {
     name : string
@@ -45,21 +46,29 @@ const GoolgeUserModel = model<GoogleUserDocument>('GoolgeUser', GoogleUserSchema
 
 export async function normalUserExist(username:string): Promise<boolean> {
     let doc = await NormalUserModel.findOne({username:username, accountType:accountType.normal})
-    return !(doc==null)
+    return !(doc === null)
 }
-export async function normalUserExistWithPwd(username:string, password:string): Promise<boolean> {
-    let doc = await NormalUserModel.findOne({username:username, password:password, accountType:accountType.normal})
-    return !(doc==null)
+
+export async function normalUserExistWithPWD(username:string, password:string): Promise<boolean> {
+    let doc = await NormalUserModel.findOne({username:username, accountType:accountType.normal})
+    if( doc === null) {
+        return false
+    }
+
+    return await comparePassword(password, doc.password.toString())
 }
 
 export async function insertNormalUser(username:string, password:string, email:string, name:string): Promise<void> {
     await NormalUserModel.create({
-        username:username, password: password, email: email, name:name, accountType:accountType.normal, balance:0, emailVerified: 0 })
+        username:username, password: passwordHash(password), email: email, name:name, accountType:accountType.normal, balance:0, emailVerified: 0 })
 }
 
 export async function resetPassword(username:string, password:string, newPassword:string): Promise<boolean> {
-    let r = await NormalUserModel.updateOne({username:username, password:password}, {$set:{password:newPassword}})
-    return r.modifiedCount >0
+    if (!await normalUserExistWithPWD(username, password)) {
+        return false
+    }
+    let r = await NormalUserModel.updateOne({username:username}, {$set:{password: passwordHash(newPassword)}})
+    return r.modifiedCount>0
 }
 
 export async function normalEmailCheckAndChange(username:string, email:string): Promise<boolean> {

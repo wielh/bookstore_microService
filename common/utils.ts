@@ -1,42 +1,20 @@
-import {createHmac} from "crypto";
+
 import jwt from 'jsonwebtoken';
 
-import {hashSalt} from "./config.js";
 import {tokenKey, channelName} from '../common/config.js'
 import {Connection} from 'amqplib'
+import {hash, genSalt, compare} from "bcrypt"
 
-
-export function passwordHash(password:string):string {
-    for(let i=0;i<10;i++){
-        password = createHmac('sha512',hashSalt).update(password).digest('hex');
-    }
-    return password;
+export async function passwordHash(password:string):Promise<string> {
+    const salt = await genSalt(10);
+    return await hash(password, salt);
 };
 
-export function checkParameterFormat(object:any, key:string, typeof_value:string, optional?:boolean): boolean{
-    if( !(key in object) || object[key] === null) {
-        if (!optional) {
-            return false
-        }
-        return true
-    }
-
-    let obj = object[key]
-    if (typeof_value == 'json') {
-        try {
-            JSON.parse(obj)
-            return true;
-        } catch (error) {
-            return false;
-        }
-    } else if (typeof_value.split(":")[0] == "array" && typeof_value.split(":").length>1){
-        if (!Array.isArray(obj)) {
-            return false
-        }
-        let type: string = typeof_value.split(":")[1] 
-        return obj.every(item => typeof item === type);
-    } else {
-        return ((typeof obj) === typeof_value)
+export async function comparePassword(plainTextPassword:string, hashedPassword:string): Promise<boolean> {
+    try {
+       return await compare(plainTextPassword, hashedPassword);
+    } catch (error) {
+       return false;
     }
 }
 
@@ -52,22 +30,57 @@ export function getCurrentDatetime():string{
     return dateString;
 }
 
+export function castToString(value: any): string {
+    if (typeof value === 'string') {
+        return value
+    }
+    return ""
+}
+
+export function castToStringArray(values: any): string[] {
+    if (Array.isArray(values)) {
+        return []
+    }
+
+    const valueArray = values as any[]
+    const areAllStrings = valueArray.every(value => typeof value === 'string');
+    if(!areAllStrings) {
+        return []
+    }
+    return valueArray
+}
 
 
-const { sign, verify } = jwt
+interface UserTokenVal {
+    username: string;
+    accountType: number;
+    email: string;
+}
 
-export function decodeToken(token:string):any{
+const { sign } = jwt
+
+export function decodeToken(token:string):UserTokenVal {
     try {
-        return jwt.decode(token);
+        const val = jwt.decode(token) as UserTokenVal; 
+        if (
+            val &&
+            typeof val.username === 'string' &&
+            typeof val.accountType === 'number' &&
+            typeof val.email === 'string'
+          ) {
+            return val;
+          } else {
+            return null
+          }
     } catch(e){
         console.log("cannot parse token, reason:");
         console.log(e);
-        return JSON.parse("{}");
+        return null;
     }
 }
 
-export function createToken(json:any, second:number):string{
-    return sign(json,  tokenKey, { expiresIn: second});
+export function createToken(user: UserTokenVal, second:number):string{
+    return sign(user,  tokenKey, { expiresIn: second});
 }
 
 export class pageX {

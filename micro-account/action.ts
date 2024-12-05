@@ -5,10 +5,10 @@ import { GooogleLoginRequest, GooogleLoginResponse, LoginRequest, LoginResponse,
 import {errorLogger,tokenExpireSecond, gateDefaultURL, accountType, rabbitMQConnection} from '../common/config.js'
 import {errSuccess, errMongo, errUserExist, errUserNotExist, errSendRegisterEmailFailed, errEmailVerifited} from '../common/errCode.js'
 import {createToken, sendMailProducer} from '../common/utils.js'
-import * as userDB from '../common/dbStructure/user.js'
+import * as userDB from '../common/model/user.js'
 
 export async function resendRegiterVerifyEmailImplementation(username:string, email:string): Promise<number> {
-    let verificationCode = createToken({username:username, accountType:0 , email: email},60*60)
+    let verificationCode = createToken({username:username, accountType: accountType.normal , email: email}, 60*60)
     const emailInfo =
         ` Hello, user ${username}, this is QueenStore bookstore.` +
         ` Please enter the website: ${gateDefaultURL}/account/register_verify?token=${verificationCode} `+
@@ -74,7 +74,7 @@ export async function resendRegisterVerifyEmail(call: grpc.ServerUnaryCall<Resen
 } 
 
 export async function registerVerify(call: grpc.ServerUnaryCall<RegisterVerifyRequest,RegisterVerifyResponse>, callback: grpc.sendUnaryData<RegisterVerifyResponse>) {
-    let functionName:string = "registerVerify"
+    let functionName: string = "registerVerify"
     let req = call.request
     let res = new RegisterVerifyResponse()
     try {
@@ -117,7 +117,7 @@ export async function googleLogin(call: grpc.ServerUnaryCall<GooogleLoginRequest
             return
         }
     }
-    res.token = createToken({username:req.googleID.toString(), accoutType:accountType.google},tokenExpireSecond)
+    res.token = createToken({username:req.googleID.toString(), accountType:accountType.google, email:""},tokenExpireSecond)
     res.errcode = errSuccess
     callback(null,res)
 }
@@ -127,7 +127,7 @@ export async function login(call: grpc.ServerUnaryCall<LoginRequest, LoginRespon
     let res = new LoginResponse()
     try {
        
-        let exist = await userDB.normalUserExistWithPwd(call.request.base.username, call.request.base.password)
+        let exist = await userDB.normalUserExistWithPWD(call.request.base.username, call.request.base.password)
         if (!exist) {
             res.errcode = errUserNotExist
             callback(null, res)
@@ -140,9 +140,6 @@ export async function login(call: grpc.ServerUnaryCall<LoginRequest, LoginRespon
         return
     }
 
-    res.token = createToken({username:call.request.base.username, accountType:accountType.normal},tokenExpireSecond)
-    res.errcode = errSuccess
-    callback(null,res)
 }
  
 export async function resetPassword(call: grpc.ServerUnaryCall<ResetPasswordRequest, ResetPasswordResponse>, callback: grpc.sendUnaryData<ResetPasswordResponse>): Promise<void> {

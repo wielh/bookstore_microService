@@ -1,13 +1,21 @@
-import {Request, Response, json, Router} from 'express';
+import {Request, Response, Router} from 'express';
+import { query, validationResult } from 'express-validator';
 
 import {bookServiceClient} from '../../../common/config.js'
-import {checkParameterFormat} from '../../../common/utils.js'
 import {errParameter,errMicroServiceNotResponse} from '../../../common/errCode.js'
 import {BookListRequest,BookListResponse} from '../../../proto/book.js'
+import {castToString, castToStringArray} from '../../../common/utils.js'
 
 export function registerServiceBook(): Router{
     let router = Router()
-    router.get('/', json(), listBook)
+    router.get(
+        '/', 
+        [
+            query("page").isInt({ min: 0 }).withMessage("field page should be int and val>=0"),
+            query("pageSize").isInt({ min: 1 }).withMessage("field pageSize should be int and val>=0"),
+        ],
+        listBook
+    )
     return router
 }
 
@@ -52,27 +60,26 @@ class bookList {
 }
 
 async function listBook(req:Request, res:Response):Promise<void> {
-    let bookNameOK = checkParameterFormat(req.body,"bookName","string", true)
-    let tagsOK = checkParameterFormat(req.body,"tags","array:string", true)
-    let priceUpperboundOK = checkParameterFormat(req.body,"priceUpperbound","number",true)
-    let priceLowerboundOK = checkParameterFormat(req.body,"priceLowerbound","number",true)
 
-    if (!checkParameterFormat(req.body,"page","number") || 
-        !checkParameterFormat(req.body,"pageSize","number") ||
-        !bookNameOK || !tagsOK || !priceLowerboundOK || !priceUpperboundOK){
-        res.status(200).json({errCode: errParameter});
-        return
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+       res.status(400).json({ errorCode:errParameter, errors: errors.array() });
+       return
     }
 
-    const {page, pageSize, bookName, tags, priceUpperbound, priceLowerbound} = req.body;
+    const {page, pageSize, bookName, tags, priceUpperbound, priceLowerbound} = req.query;
 
     let grpcReq = new BookListRequest()
-    grpcReq.page = Math.floor(page)
-    grpcReq.pageSize = Math.floor(pageSize)
-    grpcReq.bookName = bookNameOK? bookName: ""
-    grpcReq.tags = tagsOK ? tags: []
-    grpcReq.priceUpperbound = priceUpperboundOK? priceUpperbound:0
-    grpcReq.priceLowerbound = priceLowerboundOK? priceLowerbound:0
+    grpcReq.page = Math.floor(parseInt(castToString(page), 10))
+    grpcReq.pageSize = Math.floor(parseInt(castToString(pageSize), 10))
+    grpcReq.bookName = castToString(bookName)
+
+    let array = castToStringArray(tags)
+    grpcReq.tags = array
+    let i = parseInt(castToString(priceUpperbound), 10);
+    grpcReq.priceUpperbound = Number.isInteger(i)? i:0
+    i = parseInt(castToString(priceLowerbound), 10);
+    grpcReq.priceLowerbound = Number.isInteger(i)? i:0
 
     bookServiceClient.bookList(grpcReq,(err, response) => {
         if (err || !response) {
